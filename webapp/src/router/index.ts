@@ -2,6 +2,8 @@ import { apps } from '@/apps.ts';
 import { useAppStore } from '@/stores/appStore.ts';
 import { createRouter, createWebHistory } from 'vue-router';
 import { estimatingRoutes } from '@/modules/estimating/router';
+import { planningRoutes } from '@/modules/planning/router';
+import { schedulingRoutes } from '@/modules/scheduling/router';
 import { isAuthenticated, hasPendingCompanySelection } from '@/services/authService';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
@@ -25,17 +27,45 @@ const routes = [
         meta: { public: false, companySelect: true, title: 'Select Company' },
     },
 
-    // Default redirect
+    // Default redirect → portal home
     {
         path: '/',
-        redirect: `/${apps.estimating.baseSlug}/estimates`,
+        redirect: `/${apps.portal.baseSlug}`,
     },
 
-    // Estimating (primary app)
+    // Portal (platform home / launcher)
+    {
+        path: `/${apps.portal.baseSlug}`,
+        component: () => import('@/layout/AppLayout.vue'),
+        children: [
+            {
+                path: '',
+                name: 'portal-dashboard',
+                component: () => import('@/modules/portal/views/PortalDashboardView.vue'),
+                meta: { title: 'Home' },
+            },
+        ],
+    },
+
+    // Estimating
     {
         path: `/${apps.estimating.baseSlug}`,
         component: () => import('@/layout/AppLayout.vue'),
         children: estimatingRoutes,
+    },
+
+    // Planning / PM
+    {
+        path: `/${apps.planning.baseSlug}`,
+        component: () => import('@/layout/AppLayout.vue'),
+        children: planningRoutes,
+    },
+
+    // Scheduling
+    {
+        path: `/${apps.scheduling.baseSlug}`,
+        component: () => import('@/layout/AppLayout.vue'),
+        children: schedulingRoutes,
     },
 
     // Global Analytics (cross-company, Admins + Analytics role only)

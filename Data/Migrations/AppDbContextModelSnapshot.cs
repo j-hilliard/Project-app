@@ -856,6 +856,388 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.ToTable("Permissions");
                 });
 
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.FcoDocument", b =>
+                {
+                    b.Property<int>("FcoDocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FcoDocumentId"));
+
+                    b.Property<string>("ApprovalNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ClientApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ClientApprovalName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientContact")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime?>("ContractorApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ContractorApprovalName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContractorContact")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContractorName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EquipmentBreakdownJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FcoNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LaborBreakdownJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("LinkedEstimateId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MarkupPct")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("MaterialBreakdownJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreparedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProjectAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProjectName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequestedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RevisedCompletionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevisionHistory")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ScheduleImpactDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScopeDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<decimal?>("TaxPct")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("TotalFcoAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal?>("UpdatedContractValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("FcoDocumentId");
+
+                    b.ToTable("FcoDocuments");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepDependency", b =>
+                {
+                    b.Property<int>("DependencyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DependencyId"));
+
+                    b.Property<int>("PredecessorStepId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StepId")
+                        .HasColumnType("int");
+
+                    b.HasKey("DependencyId");
+
+                    b.HasIndex("PredecessorStepId");
+
+                    b.HasIndex("StepId");
+
+                    b.ToTable("StepDependencies");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutPlan", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanId"));
+
+                    b.Property<string>("Client")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("LinkedEstimateId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LinkedFcoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LinkedStaffingPlanId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PlannedEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Site")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("StepOutPlans");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", b =>
+                {
+                    b.Property<int>("StepId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StepId"));
+
+                    b.Property<string>("Area")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CraftCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsParallel")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("MaterialToolRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("PermitRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlannedEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RequiredPeople")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SortOrder")
+                        .HasPrecision(10, 4)
+                        .HasColumnType("decimal(10,4)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("StepCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("StepId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("StepOutSteps");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepResourceReq", b =>
+                {
+                    b.Property<int>("ReqId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReqId"));
+
+                    b.Property<string>("CraftCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("RequiredCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StepId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ReqId");
+
+                    b.HasIndex("StepId");
+
+                    b.ToTable("StepResourceReqs");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.WorkPackage", b =>
+                {
+                    b.Property<int>("PackageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PackageId"));
+
+                    b.Property<string>("CompanyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("CraftCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlannedEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("ReadyForScheduling")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RequiredPeople")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("PackageId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("WorkPackages");
+                });
+
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.RateBook", b =>
                 {
                     b.Property<int>("RateBookId")
@@ -1075,6 +1457,177 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Assignment", b =>
+                {
+                    b.Property<int>("AssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssignmentId"));
+
+                    b.Property<string>("CompanyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("CraftCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JobName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("JobSourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobSourceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("ResourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Shift")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("AssignmentId");
+
+                    b.HasIndex("ResourceId");
+
+                    b.ToTable("Assignments");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.AvailabilityBlock", b =>
+                {
+                    b.Property<int>("BlockId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BlockId"));
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResourceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BlockId");
+
+                    b.HasIndex("ResourceId");
+
+                    b.ToTable("AvailabilityBlocks");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Certification", b =>
+                {
+                    b.Property<int>("CertId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CertId"));
+
+                    b.Property<DateTime?>("ExpirationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ResourceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("CertId");
+
+                    b.HasIndex("ResourceId");
+
+                    b.ToTable("Certifications");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Craft", b =>
+                {
+                    b.Property<string>("CraftCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDirect")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("CraftCode");
+
+                    b.ToTable("Crafts");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", b =>
+                {
+                    b.Property<int>("ResourceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResourceId"));
+
+                    b.Property<string>("Branch")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("CraftCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("ResourceId");
+
+                    b.HasIndex("CraftCode");
+
+                    b.ToTable("Resources");
                 });
 
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Settings", b =>
@@ -1520,6 +2073,57 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.Navigation("Estimate");
                 });
 
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepDependency", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", "PredecessorStep")
+                        .WithMany()
+                        .HasForeignKey("PredecessorStepId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", "Step")
+                        .WithMany("Dependencies")
+                        .HasForeignKey("StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PredecessorStep");
+
+                    b.Navigation("Step");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutPlan", "Plan")
+                        .WithMany("Steps")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepResourceReq", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", "Step")
+                        .WithMany("ResourceRequirements")
+                        .HasForeignKey("StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Step");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.WorkPackage", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutPlan", "Plan")
+                        .WithMany("WorkPackages")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.RateBookEquipmentRate", b =>
                 {
                     b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.RateBook", "RateBook")
@@ -1570,6 +2174,50 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Assignment", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", "Resource")
+                        .WithMany("Assignments")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.AvailabilityBlock", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", "Resource")
+                        .WithMany("AvailabilityBlocks")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Certification", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", "Resource")
+                        .WithMany("Certifications")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", b =>
+                {
+                    b.HasOne("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Craft", "Craft")
+                        .WithMany("Resources")
+                        .HasForeignKey("CraftCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Craft");
                 });
 
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.StaffingLaborRow", b =>
@@ -1683,6 +2331,20 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.Navigation("RolePermissions");
                 });
 
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutPlan", b =>
+                {
+                    b.Navigation("Steps");
+
+                    b.Navigation("WorkPackages");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Planning.StepOutStep", b =>
+                {
+                    b.Navigation("Dependencies");
+
+                    b.Navigation("ResourceRequirements");
+                });
+
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.RateBook", b =>
                 {
                     b.Navigation("EquipmentRates");
@@ -1697,6 +2359,20 @@ namespace Stronghold.EnterpriseEstimating.Data.Migrations
                     b.Navigation("RolePermissions");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Craft", b =>
+                {
+                    b.Navigation("Resources");
+                });
+
+            modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.Scheduling.Resource", b =>
+                {
+                    b.Navigation("Assignments");
+
+                    b.Navigation("AvailabilityBlocks");
+
+                    b.Navigation("Certifications");
                 });
 
             modelBuilder.Entity("Stronghold.EnterpriseEstimating.Data.Models.StaffingPlan", b =>

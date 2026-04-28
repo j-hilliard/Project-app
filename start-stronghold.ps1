@@ -2,6 +2,22 @@
 $ErrorActionPreference = 'Continue'
 $AppRoot = $PSScriptRoot
 
+function Get-StrongholdPortOwner {
+    param([int]$Port)
+
+    $conn = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -eq $conn) { return $null }
+
+    $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
+    [pscustomobject]@{
+        Port = $Port
+        ProcessId = $conn.OwningProcess
+        ProcessName = if ($proc) { $proc.ProcessName } else { "unknown" }
+        Path = if ($proc) { $proc.Path } else { "" }
+    }
+}
+
 Clear-Host
 Write-Host ""
 Write-Host "  STRONGHOLD ENTERPRISE ESTIMATING  -- Starting Up" -ForegroundColor Cyan
@@ -21,8 +37,28 @@ if ($svc.Status -ne 'Running') {
 }
 Write-Host "  SQL Server Express: OK" -ForegroundColor Green
 
+$apiAlreadyRunning = $false
+$apiOwner = Get-StrongholdPortOwner -Port 7211
+if ($apiOwner) {
+    if ($apiOwner.ProcessName -eq "node") {
+        Write-Host "  WARNING: Node/Vite is occupying API port 7211. Stopping PID $($apiOwner.ProcessId) so the API can bind correctly." -ForegroundColor Yellow
+        Stop-Process -Id $apiOwner.ProcessId -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+    } elseif ($apiOwner.ProcessName -eq "dotnet") {
+        Write-Host "  API port 7211 is already owned by dotnet. Reusing existing API process PID $($apiOwner.ProcessId)." -ForegroundColor Green
+        $apiAlreadyRunning = $true
+    } else {
+        Write-Host "  ERROR: Port 7211 is occupied by $($apiOwner.ProcessName) PID $($apiOwner.ProcessId)." -ForegroundColor Red
+        Write-Host "  7211 is reserved for the .NET API. Stop that process before starting Stronghold." -ForegroundColor Red
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+}
+
 Write-Host "  Starting API..." -ForegroundColor Yellow
-Start-Process powershell -WorkingDirectory $AppRoot -ArgumentList "-NoExit", "-Command", "dotnet run --project Api --launch-profile https"
+if (-not $apiAlreadyRunning) {
+    Start-Process powershell -WorkingDirectory $AppRoot -ArgumentList "-NoExit", "-Command", "dotnet run --project Api --launch-profile https"
+}
 
 Write-Host "  Starting Cloudflare tunnel..." -ForegroundColor Yellow
 Stop-Process -Name "cloudflared" -Force -ErrorAction SilentlyContinue
@@ -30,8 +66,20 @@ Start-Sleep -Seconds 2
 $cfLog = "$env:TEMP\cf-tunnel-$((Get-Date).Ticks).log"
 Start-Process powershell -WindowStyle Minimized -ArgumentList "-NoExit", "-Command", "& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --url https://localhost:7211 2>&1 | Tee-Object -FilePath '$cfLog'"
 
+$vueOwner = Get-StrongholdPortOwner -Port 7210
+if ($vueOwner -and $vueOwner.ProcessName -ne "node") {
+    Write-Host "  ERROR: Port 7210 is occupied by $($vueOwner.ProcessName) PID $($vueOwner.ProcessId)." -ForegroundColor Red
+    Write-Host "  7210 is reserved for the Vue dev server. Stop that process before starting Stronghold." -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
 Write-Host "  Starting Vue dev server..." -ForegroundColor Yellow
-Start-Process powershell -WorkingDirectory "$AppRoot\webapp" -ArgumentList "-NoExit", "-Command", "npm run dev"
+if ($vueOwner -and $vueOwner.ProcessName -eq "node") {
+    Write-Host "  Vue port 7210 is already owned by node. Reusing existing Vue process PID $($vueOwner.ProcessId)." -ForegroundColor Green
+} else {
+    Start-Process powershell -WorkingDirectory "$AppRoot\webapp" -ArgumentList "-NoExit", "-Command", "npm run dev"
+}
 
 Write-Host "  Waiting for API..." -ForegroundColor Yellow
 Add-Type -AssemblyName System.Net.Http
@@ -49,6 +97,12 @@ for ($i = 0; $i -lt 40; $i++) {
     } catch { }
 }
 $http.Dispose()
+$apiOwner = Get-StrongholdPortOwner -Port 7211
+if ($apiOwner -and $apiOwner.ProcessName -ne "dotnet") {
+    Write-Host "  ERROR: API port 7211 is owned by $($apiOwner.ProcessName), not dotnet. Data calls will fail." -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
 if ($apiReady) { Write-Host "  API: Ready" -ForegroundColor Green } else { Write-Host "  API still starting..." -ForegroundColor Yellow }
 
 Write-Host "  Waiting for Vue..." -ForegroundColor Yellow

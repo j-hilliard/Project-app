@@ -33,19 +33,19 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="NSwag.AspNetCore" Version="13.20.0" />
-        <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="13.20.0" />
-        <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="13.20.0" />
-        <PackageReference Include="NSwag.Generation" Version="13.20.0" />
-        <PackageReference Include="NSwag.Generation.WebApi" Version="13.20.0" />
-        <PackageReference Include="NSwag.MSBuild" Version="13.20.0">
+        <PackageReference Include="NSwag.AspNetCore" Version="14.7.1" />
+        <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="14.7.1" />
+        <PackageReference Include="NSwag.CodeGeneration.TypeScript" Version="14.7.1" />
+        <PackageReference Include="NSwag.Generation" Version="14.7.1" />
+        <PackageReference Include="NSwag.Generation.WebApi" Version="14.7.1" />
+        <PackageReference Include="NSwag.MSBuild" Version="14.7.1">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="PdfPig" Version="0.1.14" />
         <PackageReference Include="QuestPDF" Version="2024.3.7" />
-        <PackageReference Include="ZymLabs.NSwag.FluentValidation" Version="0.6.3" />
-        <PackageReference Include="ZymLabs.NSwag.FluentValidation.AspNetCore" Version="0.6.3" />
+        <PackageReference Include="ZymLabs.NSwag.FluentValidation" Version="0.7.1" />
+        <PackageReference Include="ZymLabs.NSwag.FluentValidation.AspNetCore" Version="0.7.1" />
     </ItemGroup>
 
     <ItemGroup>

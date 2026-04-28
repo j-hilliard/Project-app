@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Stronghold.EnterpriseEstimating.Data.Models;
+using Stronghold.EnterpriseEstimating.Data.Models.Planning;
+using Stronghold.EnterpriseEstimating.Data.Models.Scheduling;
 
 namespace Stronghold.EnterpriseEstimating.Data;
 
@@ -39,6 +41,21 @@ public class AppDbContext : DbContext
     public DbSet<RateBookExpenseItem> RateBookExpenseItems { get; set; } = null!;
     public DbSet<CrewTemplate> CrewTemplates { get; set; } = null!;
     public DbSet<CrewTemplateRow> CrewTemplateRows { get; set; } = null!;
+
+    // Planning
+    public DbSet<StepOutPlan> StepOutPlans { get; set; } = null!;
+    public DbSet<StepOutStep> StepOutSteps { get; set; } = null!;
+    public DbSet<StepDependency> StepDependencies { get; set; } = null!;
+    public DbSet<StepResourceReq> StepResourceReqs { get; set; } = null!;
+    public DbSet<WorkPackage> WorkPackages { get; set; } = null!;
+    public DbSet<FcoDocument> FcoDocuments { get; set; } = null!;
+
+    // Scheduling
+    public DbSet<Craft> Crafts { get; set; } = null!;
+    public DbSet<Resource> Resources { get; set; } = null!;
+    public DbSet<Certification> Certifications { get; set; } = null!;
+    public DbSet<AvailabilityBlock> AvailabilityBlocks { get; set; } = null!;
+    public DbSet<Assignment> Assignments { get; set; } = null!;
 
     // Cost Books
     public DbSet<CostBook> CostBooks { get; set; } = null!;
@@ -378,6 +395,133 @@ public class AppDbContext : DbContext
             b.HasOne(r => r.CostBook)
                 .WithMany(cb => cb.OverheadItems)
                 .HasForeignKey(r => r.CostBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ── Planning ───────────────────────────────────────────────────────
+        modelBuilder.Entity<StepOutPlan>(b =>
+        {
+            b.HasKey(p => p.PlanId);
+            b.Property(p => p.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(p => p.Name).IsRequired().HasMaxLength(200);
+            b.Property(p => p.Status).IsRequired().HasMaxLength(30);
+            b.Property(p => p.CreatedBy).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<StepOutStep>(b =>
+        {
+            b.HasKey(s => s.StepId);
+            b.Property(s => s.StepCode).IsRequired().HasMaxLength(20);
+            b.Property(s => s.SortOrder).HasPrecision(10, 4);
+            b.Property(s => s.Title).IsRequired().HasMaxLength(300);
+            b.Property(s => s.Status).IsRequired().HasMaxLength(30);
+            b.HasOne(s => s.Plan)
+                .WithMany(p => p.Steps)
+                .HasForeignKey(s => s.PlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StepDependency>(b =>
+        {
+            b.HasKey(d => d.DependencyId);
+            b.HasOne(d => d.Step)
+                .WithMany(s => s.Dependencies)
+                .HasForeignKey(d => d.StepId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(d => d.PredecessorStep)
+                .WithMany()
+                .HasForeignKey(d => d.PredecessorStepId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<StepResourceReq>(b =>
+        {
+            b.HasKey(r => r.ReqId);
+            b.Property(r => r.CraftCode).IsRequired().HasMaxLength(50);
+            b.HasOne(r => r.Step)
+                .WithMany(s => s.ResourceRequirements)
+                .HasForeignKey(r => r.StepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkPackage>(b =>
+        {
+            b.HasKey(wp => wp.PackageId);
+            b.Property(wp => wp.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(wp => wp.Title).IsRequired().HasMaxLength(200);
+            b.Property(wp => wp.Status).IsRequired().HasMaxLength(30);
+            b.Property(wp => wp.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(wp => wp.Plan)
+                .WithMany(p => p.WorkPackages)
+                .HasForeignKey(wp => wp.PlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<FcoDocument>(b =>
+        {
+            b.HasKey(f => f.FcoDocumentId);
+            b.Property(f => f.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(f => f.FcoNumber).IsRequired().HasMaxLength(50);
+            b.Property(f => f.Title).IsRequired().HasMaxLength(200);
+            b.Property(f => f.Status).IsRequired().HasMaxLength(30);
+            b.Property(f => f.TotalFcoAmount).HasPrecision(18, 2);
+            b.Property(f => f.MarkupPct).HasPrecision(5, 4);
+            b.Property(f => f.UpdatedContractValue).HasPrecision(18, 2);
+            b.Property(f => f.TaxPct).HasPrecision(5, 4);
+            b.Property(f => f.CreatedBy).IsRequired().HasMaxLength(100);
+        });
+
+        // ── Scheduling ─────────────────────────────────────────────────────
+        modelBuilder.Entity<Craft>(b =>
+        {
+            b.HasKey(c => c.CraftCode);
+            b.Property(c => c.CraftCode).IsRequired().HasMaxLength(50);
+            b.Property(c => c.Title).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Resource>(b =>
+        {
+            b.HasKey(r => r.ResourceId);
+            b.Property(r => r.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(r => r.Name).IsRequired().HasMaxLength(200);
+            b.Property(r => r.CraftCode).IsRequired().HasMaxLength(50);
+            b.HasOne(r => r.Craft)
+                .WithMany(c => c.Resources)
+                .HasForeignKey(r => r.CraftCode)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Certification>(b =>
+        {
+            b.HasKey(c => c.CertId);
+            b.Property(c => c.Type).IsRequired().HasMaxLength(50);
+            b.HasOne(c => c.Resource)
+                .WithMany(r => r.Certifications)
+                .HasForeignKey(c => c.ResourceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AvailabilityBlock>(b =>
+        {
+            b.HasKey(ab => ab.BlockId);
+            b.HasOne(ab => ab.Resource)
+                .WithMany(r => r.AvailabilityBlocks)
+                .HasForeignKey(ab => ab.ResourceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Assignment>(b =>
+        {
+            b.HasKey(a => a.AssignmentId);
+            b.Property(a => a.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(a => a.CraftCode).IsRequired().HasMaxLength(50);
+            b.Property(a => a.JobSourceType).IsRequired().HasMaxLength(30);
+            b.Property(a => a.Shift).IsRequired().HasMaxLength(20);
+            b.Property(a => a.Status).IsRequired().HasMaxLength(20);
+            b.Property(a => a.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(a => a.Resource)
+                .WithMany(r => r.Assignments)
+                .HasForeignKey(a => a.ResourceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

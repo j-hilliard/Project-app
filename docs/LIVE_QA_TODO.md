@@ -22,6 +22,9 @@ This is the living demo-readiness scoreboard. Update it whenever testing finds a
   - each finding written granularly: what is wrong, why it is wrong, likely files, how to fix, and regression test
   - no vague "looks wrong" findings without visible/code evidence
 - Platform expansion work must follow `docs/PLATFORM_EXPANSION_MASTER_CONTRACT.md`. That document is the stable Claude-facing implementation/audit contract for Portal + Planning + Scheduling.
+- **Requirements intake rule:** Joseph's requirements are the source of truth. Before Codex verifies or closes work, new requirements must be translated into live TODO acceptance gates with expected behavior, likely files, verification evidence, and matching regression checklist IDs.
+- **Traceability rule:** Claude planning docs, Claude TODOs, and implementation claims do not become QA truth automatically. Codex must compare them against Joseph's pasted requirements and this live QA board, then add/reopen TODO items for any missing requirement, mismatch, or unverifiable claim.
+- **Verification sequence:** Requirements first, TODO/checklist update second, implementation audit third, screenshots/API/build evidence fourth, checkbox closure last.
 
 ## Open Blockers
 
@@ -191,6 +194,25 @@ This is the living demo-readiness scoreboard. Update it whenever testing finds a
 
 These items govern the Portal / Planning / Scheduling expansion. They are not permission for Codex to implement app code; they are the audit gates Codex will use to manage Claude's implementation work.
 
+### PLATFORM-PHASE-0: Claude Phase 0 Analysis / Research / Docs
+
+- [ ] Verify Phase 0 is complete.
+- **Status:** Claude started Phase 0. Awaiting implementation notes, changed files, and evidence.
+- **Phase 0 expected output:** Actual repo inspection, corrected repo-path assumptions, architecture doc, domain research notes, live implementation todo, implementation worklog, regression checklist, test run log, bootstrap/migration/seed summary, test setup summary, estimating/staffing/rate/cost model summary, and phased implementation plan.
+- **Do not close until Codex verifies:**
+  - `docs/PORTAL_PLANNING_SCHEDULING_ARCHITECTURE.md` exists and reflects actual repo paths.
+  - `docs/DOMAIN_RESEARCH_NOTES.md` exists and covers scheduling, planning, actuals/delta, and FCO document expectations.
+  - `docs/LIVE_TODO.md` exists and is current for Claude's implementation work.
+  - `docs/IMPLEMENTATION_WORKLOG.md` exists and records commands/files/decisions.
+  - `docs/REGRESSION_CHECKLIST.md` exists or Claude explicitly maps to `docs/QA_REGRESSION_CHECKLIST.md`.
+  - `docs/TEST_RUN_LOG.md` exists and records discovered test/build commands, even if none have run yet.
+  - Claude documents actual locations for `Api/Program.cs`, `Data/AppDbContext.cs`, `Data/Migrations`, `Data/DBInitializer.cs`, `Data/DesignTimeContextFactory.cs`, `webapp/src/apps.ts`, `webapp/src/router/index.ts`, and existing test/e2e/build setup.
+  - No app source code is marked complete solely from analysis.
+- **Codex verification required:** Read Claude's changed docs, compare against actual repo structure, and report PASS/FAIL with file paths.
+- **Regression checklist:** `QA-PLAT-001`, `QA-PLAT-003`, `QA-BOOT-001`.
+- **Latest Codex spot-check:** 2026-04-28. Phase 0 is not closeable yet. `docs/IMPLEMENTATION_WORKLOG.md` incorrectly says "No test projects, no design-time factory" even though `Data/DesignTimeContextFactory.cs` exists. `git status --short` also showed `webapp/src/apps.ts`, `webapp/src/router/index.ts`, and `webapp/src/modules/portal/` changed, but no `Api/Controllers/PortalController.cs`, `webapp/src/modules/planning/`, or `webapp/src/modules/scheduling/` visible yet despite the worklog claiming those were created. Build/test commands are still pending.
+- **Reopened reason:** N/A.
+
 ### PLATFORM-001: Claude Must Follow The Platform Master Contract
 
 - [ ] Verify Claude's implementation matches the platform master contract.
@@ -216,6 +238,216 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 - **Expected behavior:** `/estimating` routes still load; estimate/staffing workflows still pass existing demo regressions; cost books/rate books are not deleted or replaced; AI demo gates remain accepted unless fresh evidence fails.
 - **Verification required:** Codex runs or documents safe regression checks after each platform chunk, with screenshots where UI changes are visible.
 - **Regression checklist:** `QA-PLAT-004`, plus existing `QA-EST`, `QA-SP`, `QA-RCB`, `QA-AI`, and `QA-AN` gates.
+- **Reopened reason:** N/A.
+
+### PLATFORM-004: Phase 1 Portal Shell And App Registration Must Build
+
+- [ ] Verify Phase 1 portal/app-shell implementation.
+- **Problem:** Claude can update `apps.ts` and router imports before creating the actual module shells, leaving the frontend broken even though the TODO looks checked.
+- **Expected behavior:** `/` loads the portal/dashboard; portal has visible Estimating, Planning / PM, and Scheduling entry cards; `/estimating` still works; `/planning` loads a Planning shell; `/scheduling` loads a Scheduling shell; frontend build passes with no missing module imports.
+- **Likely files:** `webapp/src/apps.ts`, `webapp/src/router/index.ts`, `webapp/src/modules/portal/**`, `webapp/src/modules/planning/**`, `webapp/src/modules/scheduling/**`.
+- **Verification required:** `npm`/frontend build result, screenshots for `/`, `/estimating`, `/planning`, `/scheduling`, and code inspection proving app registry entries match real routes.
+- **Regression checklist:** `QA-PLAT-002`, `QA-PLAT-004`, `QA-PLAN-001`, `QA-SCHED-004`.
+- **Latest Codex spot-check:** 2026-04-28. `webapp/src/router/index.ts` imports `@/modules/planning/router` and `@/modules/scheduling/router`, but `git status --short` only showed `webapp/src/modules/portal/` as untracked. Do not close until missing modules exist and the frontend build passes.
+- **Reopened reason:** N/A.
+
+### PLATFORM-005: Phase 1 Portal Dashboard Endpoint Must Exist And Stay Thin
+
+- [ ] Verify backend portal summary endpoint.
+- **Problem:** The portal should consume backend read models, not duplicate domain logic in Vue. Claude's worklog claims `Api/Controllers/PortalController.cs` exists, but the file was not visible in the current git status spot-check.
+- **Expected behavior:** `GET /api/v1/portal/dashboard` exists, compiles, respects existing auth/company conventions, and returns a thin summary read model without mutating estimating/planning/scheduling records.
+- **Likely files:** `Api/Controllers/PortalController.cs`, any portal service/read-model files Claude adds, `Api/Program.cs` only if service registration is needed.
+- **Verification required:** Backend build, endpoint code review, and browser/network/API evidence once the app is running.
+- **Regression checklist:** `QA-PLAT-002`, `QA-PLAT-004`.
+- **Latest Codex spot-check:** 2026-04-28. Claimed in `docs/IMPLEMENTATION_WORKLOG.md`, but not visible in `git status --short`. Treat as unverified.
+- **Reopened reason:** N/A.
+
+### PLATFORM-006: Phase 2 EF Bootstrap Cleanup Must Use Real Data Project Paths
+
+- [ ] Verify migration-based bootstrap and seed split.
+- **Problem:** The repo uses top-level `Data/`, not `Api/Data/`. Bootstrap cleanup can easily break startup or migrations if Claude edits the wrong project or ignores `Data/DesignTimeContextFactory.cs`.
+- **Expected behavior:** Startup uses a clear migration-based bootstrap service; no real lifecycle uses `EnsureCreated`; reference seed and demo seed are separated and idempotent; config flags control auto-migrate/reference seed/demo seed; design-time factory is preserved/updated.
+- **Likely files:** `Api/Program.cs`, `Data/AppDbContext.cs`, `Data/DBInitializer.cs`, `Data/DesignTimeContextFactory.cs`, new `Data` bootstrap/seeder classes, config files.
+- **Verification required:** Backend build, code inspection, documented config behavior, and rerun-safe seed proof without wiping demo data.
+- **Regression checklist:** `QA-BOOT-001`, `QA-PLAT-001`.
+- **Latest Codex check:** 2026-04-28 recovery pass. Root cause for the visible empty Quote Log was that port `7211`, which `webapp/.env` expects to be the .NET API, was owned by a `node.exe` process instead of the API. Codex stopped the wrong listener, started the .NET API with the `https` launch profile, confirmed it listened on `https://localhost:7211` and connected to SQL, then ran additive `POST /api/v1/dev/seed`. Seed returned `200` with "Seed complete"; read-only authenticated checks returned `43` CSL estimates and `12` CSL staffing plans. Still open: `Program.cs` currently ignores the new `Database:AutoMigrateOnStartup` config value and runs the bootstrapper whenever a SQL connection string exists unless `SkipDatabaseInitialization=true`; `DemoDataSeeder` only seeds users while the richer demo seed still lives in `DevController`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-007: Phase 3 Planning Must Be Real Step-Out / Work-Package Planning
+
+- [ ] Verify Planning foundation.
+- **Problem:** Planning must not become a generic notes page or a thin placeholder route.
+- **Expected behavior:** Planning has real step-out plan entities/endpoints/UI with source links, step codes like `1`, `1.2`, `1.5`, dependencies, parallel work, craft/headcount requirements, and work-package generation.
+- **Likely files:** `Data/Models/**`, `Data/AppDbContext.cs`, `Api/Controllers/**Planning**`, planning services, migrations, `webapp/src/modules/planning/**`.
+- **Verification required:** Migration/entity/code review, backend build, frontend build, screenshot of step-out plan editor, evidence that steps/dependencies persist, and work package generation output.
+- **Regression checklist:** `QA-PLAN-001`, `QA-PLAN-002`, `QA-PLAN-003`, `QA-PLAN-004`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-008: Phase 4 Scheduling Demand Must Enforce Source Rules And Dedupe
+
+- [ ] Verify Scheduling demand adapter.
+- **Problem:** Scheduling is business-critical because it can double count work if it includes both a converted staffing plan and its estimate.
+- **Expected behavior:** Scheduling demand includes qualifying estimates, approved unconverted staffing plans, and scheduling-ready planning work packages. It excludes any staffing plan where `ConvertedEstimateId != null`. The exact estimate statuses that count as schedulable demand are documented.
+- **Likely files:** scheduling services/controllers, `Data/Models/StaffingPlan.cs`, `Data/Models/Estimate.cs`, `Data/AppDbContext.cs`, `webapp/src/modules/scheduling/**`.
+- **Verification required:** API output showing one approved unconverted staffing plan included, one converted staffing plan excluded, one linked estimate included when status qualifies, and no duplicate demand rows.
+- **Regression checklist:** `QA-SCHED-001`, `QA-SCHED-002`, `QA-SCHED-003`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-009: Scheduling Must Own Resources, Assignments, Coverage, And Conflicts
+
+- [ ] Verify Scheduling resource/assignment/coverage behavior.
+- **Problem:** Scheduling must own actual people assignment, not estimate labor rows or planning notes.
+- **Expected behavior:** Scheduling has resources/people, craft/skill/cert support as feasible, availability blocks, assignments, visible shortages, ending-soon, available-soon, and conflict detection for double-booking/unavailable/uncertified assignments.
+- **Likely files:** scheduling entities/services/controllers, scheduling migrations, `webapp/src/modules/scheduling/**`.
+- **Verification required:** Screenshots/API evidence for resources, assignments, coverage/shortages, ending soon, available soon, and at least one surfaced conflict.
+- **Regression checklist:** `QA-SCHED-004`, `QA-SCHED-005`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-010: Actuals And Estimate/FCO Delta Must Use Rate Book And Cost Book Logic
+
+- [ ] Verify actual-vs-estimate delta.
+- **Problem:** Actuals are required scope, not a future nice-to-have. A pile of hours is not enough; the app must compare actual charge/cost/margin against estimate/FCO baselines.
+- **Expected behavior:** Work package or step actuals can record labor/material/equipment where implemented; labor actuals compute billable value from rate book logic and internal cost from cost book logic; delta views show planned vs actual hours, charge, cost, margin, variance amount, and variance percent.
+- **Likely files:** planning actuals services/controllers/entities, rate/cost integration services, delta read models, `webapp/src/modules/planning/**`.
+- **Verification required:** Code inspection plus sample delta output for at least one estimate or FCO-linked work package.
+- **Regression checklist:** `QA-ACT-001`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-011: FCO / Change Order Must Produce A Signable Document
+
+- [ ] Verify FCO workflow and document output.
+- **Problem:** FCO/change-order planning has to produce a real signable business document, not just a record in a table.
+- **Expected behavior:** FCO links to an estimate, can be planned through Planning/work packages, tracks document status, and generates printable/PDF-ready output with project/client info, change number/date, changed scope, reason, schedule impact, cost breakdown, updated value, approval/signature fields, and revision/status history where feasible.
+- **Likely files:** FCO/change entities/controllers/services, document generation service/view, `webapp/src/modules/planning/**`.
+- **Verification required:** Generated document screenshot/PDF/HTML artifact and code evidence that it is tied to a source estimate/FCO record.
+- **Regression checklist:** `QA-FCO-001`, `QA-ACT-001`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-012: Platform Demo Seed Must Prove Planning And Scheduling Scenarios
+
+- [ ] Verify platform seed/demo scenarios.
+- **Problem:** A scheduling/planning app without realistic demo records cannot prove demand, coverage, shortages, roll-off, available-soon, conflicts, actuals, or FCO flow.
+- **Expected behavior:** Demo seed includes planning step-out plans with dependencies/parallel steps, scheduling resources/crafts, assignments ending soon, people freeing up soon, at least one shortage, at least one conflict, one approved unconverted staffing plan that appears as demand, and one converted staffing plan that does not appear separately.
+- **Likely files:** new demo seeder classes under `Data/`, any existing seed migration/bootstrap classes.
+- **Verification required:** Read-only API/DB evidence plus screenshots from Planning and Scheduling dashboards. Do not run destructive reset/seed flows without Joseph approval.
+- **Regression checklist:** `QA-DATA-001`, `QA-SCHED-002`, `QA-SCHED-003`, `QA-SCHED-004`, `QA-PLAN-004`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-013: Every Claude Chunk Needs A Codex Evidence Packet Before Closure
+
+- [ ] Enforce evidence packet for platform chunks.
+- **Problem:** Checked boxes without evidence recreate the same problem where Joseph becomes the tester and middle man.
+- **Expected behavior:** For each Claude chunk, Codex records changed files, build/test results, screenshots where UI changed, exact failures, likely files, fix guidance, and the matching regression checklist IDs.
+- **Verification required:** Evidence packet under `docs/qa-evidence/<sweep-id>/` when UI is involved, plus a Claude-readable handoff markdown file under `docs/`.
+- **Regression checklist:** `QA-PLAT-003`, `QA-PLAT-004`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-014: Scheduling Step-Out Plan Must Be Requirements-Traceable Before Coding
+
+- [ ] Verify Claude's planning-only scheduling docs capture Joseph's requirements before implementation starts.
+- **Problem:** Claude is now being asked to produce `SCHEDULING_STEP_OUT_PLAN.md` and `SCHEDULING_TODO.md` before coding. If those docs miss Joseph's actual requirements, later verification will be testing against an incomplete plan instead of the real business need.
+- **Expected behavior:** The plan docs are based on actual repo inspection and explicitly cover one portal/two apps, shared auth, Vue/C#/EF Code First, database self-build/migration behavior, estimating-to-scheduling source data, job endings, people availability, craft shortages, reassignment/move-to-next-job flow, notifications, and isolation tradeoffs.
+- **Likely files:** `SCHEDULING_STEP_OUT_PLAN.md`, `SCHEDULING_TODO.md`, `docs/LIVE_TODO.md`, `docs/IMPLEMENTATION_WORKLOG.md`, `docs/REGRESSION_CHECKLIST.md`.
+- **Verification required:** Codex reads the generated planning docs, maps each Joseph requirement to an acceptance gate, and updates this live QA board and the regression checklist before any implementation work is accepted.
+- **Regression checklist:** `QA-PLAT-005`, `QA-SCHED-006`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-015: Master Requirements Traceability Must Stay Current
+
+- [ ] Maintain the platform requirements traceability map.
+- **Problem:** Joseph's master requirements are broad enough that Claude can accidentally satisfy a narrow slice and still miss required behavior. Codex needs a stable map from Joseph's requirements to QA gates.
+- **Expected behavior:** `docs/PLATFORM_REQUIREMENTS_TRACEABILITY.md` maps each major requirement area to live QA gates and regression checklist IDs. When Joseph changes scope, Codex updates the map before verifying or closing related work.
+- **Likely files:** `docs/PLATFORM_REQUIREMENTS_TRACEABILITY.md`, `docs/LIVE_QA_TODO.md`, `docs/QA_REGRESSION_CHECKLIST.md`.
+- **Verification required:** Compare Joseph's latest requirements against the traceability map and confirm every major area has a live QA gate and a regression checklist item.
+- **Regression checklist:** `QA-PLAT-006`.
+- **Latest Codex update:** 2026-04-28 initial traceability map created from Joseph's full master prompt.
+- **Reopened reason:** N/A.
+
+### PLATFORM-016: Platform Phase Definition-Of-Done Must Include Real Tests And Evidence
+
+- [ ] Enforce phase completion gates.
+- **Problem:** A phase can look done in Claude's TODO while builds, screenshots, endpoint checks, or regression checks have not run.
+- **Expected behavior:** Every claimed completed phase has backend build, frontend build, real available tests or documented gaps, regression checklist updates, worklog entries, live TODO updates, unresolved failures, and next tasks.
+- **Likely files:** `docs/LIVE_TODO.md`, `docs/IMPLEMENTATION_WORKLOG.md`, `docs/TEST_RUN_LOG.md`, `docs/REGRESSION_CHECKLIST.md`, `docs/QA_REGRESSION_CHECKLIST.md`.
+- **Verification required:** Codex checks the claimed phase against the definition-of-done before closure and records missing evidence as reopened/open.
+- **Regression checklist:** `QA-PLAT-007`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-017: Generated API Client / NSwag Changes Must Be Tracked
+
+- [ ] Verify generated client workflow for new API endpoints.
+- **Problem:** The repo has NSwag/openapi behavior in the build path, and prior builds showed an NSwag command warning. If Claude adds Portal/Planning/Scheduling endpoints without keeping generated clients in sync, frontend integration can silently drift.
+- **Expected behavior:** Claude documents whether generated clients are used for new endpoints, runs the correct generation command when needed, or explicitly documents why direct API calls are currently used. Build warnings are not ignored if they affect client sync.
+- **Likely files:** `Api/nswag.json`, project build files, generated client output if present, new frontend API services/stores.
+- **Verification required:** Code review plus build/test evidence showing API changes and frontend calls are aligned.
+- **Regression checklist:** `QA-PLAT-008`.
+- **Latest Codex check:** 2026-04-28. `dotnet build --no-restore --configuration Release` passed and NSwag executed successfully against `Api/nswag.json`. Still open until Codex verifies whether frontend uses generated client output or direct API calls for new scheduling/planning/portal endpoints and whether the generated artifacts changed as expected.
+- **Reopened reason:** N/A.
+
+### PLATFORM-018: Shared Demand/Coverage Logic Must Not Live Only In Vue
+
+- [ ] Verify core operational truth is centralized appropriately.
+- **Problem:** The master requirements call out duplicated schedule/labor/coverage logic and warn against browser-side fan-out becoming the source of operational truth. If Scheduling/Planning repeats estimating frontend calculations, dashboards can disagree again.
+- **Expected behavior:** Demand aggregation, converted-plan dedupe, coverage gaps, assignment conflicts, ending-soon, and available-soon calculations live in backend/shared services or documented read models where they can be tested and reused. Vue views consume results and handle presentation.
+- **Likely files:** scheduling/planning services/controllers, shared calculation services, existing manpower/forecast logic, `webapp/src/modules/**` views/stores.
+- **Verification required:** Code inspection and at least one API/test evidence path showing the calculation is not only a frontend computed value.
+- **Regression checklist:** `QA-PLAT-009`, `QA-SCHED-001`, `QA-SCHED-008`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-019: Claude Scheduling Implementation Queue Must Be Verified Item-By-Item
+
+- [ ] Audit Claude's current scheduling implementation queue.
+- **Problem:** Claude is now working from a broad checklist that includes planning docs, scheduling services, Program.cs wiring, DevController seed data, portal/dashboard KPI fixes, multiple Scheduling views, Planning views, and a final regression pass. If Codex verifies only the final UI, implementation gaps can hide underneath.
+- **Claude queue captured 2026-04-28:** `SCHEDULING_STEP_OUT_PLAN.md`, `SCHEDULING_TODO.md`, `AssignmentConflictService.cs`, `CoverageCalculationService.cs`, `SuggestedMatchService.cs`, Program.cs service registration, SchedulingController wiring, scheduling demo seed data, Portal/Scheduling dashboard KPIs, SchedulingDashboardView, JobsBoardView, ResourcesBoardView, AssignmentsView, CoverageView, RollOffView, StepOutPlanList/Form, WorkPackageList, FcoList, and full regression checklist.
+- **Expected behavior:** Each queue item must have code/docs evidence, build/test evidence where applicable, and an explicit PASS/FAIL/NOT VERIFIED verdict before Codex closes related live TODO items.
+- **Likely files:** `SCHEDULING_STEP_OUT_PLAN.md`, `SCHEDULING_TODO.md`, scheduling/planning services/controllers/views, `Api/Program.cs`, `Data/**`, `Api/Controllers/DevController.cs`, dashboard views/services.
+- **Verification required:** Codex creates an evidence packet after Claude's chunk showing which checklist items exist, which compile, which are functional, and which violate architecture boundaries.
+- **Regression checklist:** `QA-PLAT-007`, `QA-PLAT-009`, `QA-PLAN-005`, `QA-SCHED-004`, `QA-SCHED-007`, `QA-SCHED-008`.
+- **Latest Codex check:** 2026-04-28. File presence is now broad: scheduling docs, `AssignmentConflictService.cs`, `CoverageCalculationService.cs`, `SuggestedMatchService.cs`, `SchedulingController.cs`, `PortalController.cs`, planning/scheduling Vue views, planning/scheduling models, and migrations exist. Backend build passed; frontend build passed. Still open because functional verification, screenshots, route smoke, API output, seed/dedupe proof, and final regression checklist have not been completed. `docs/LIVE_TODO.md` is stale and still says Phase 1 is in progress even though later files exist.
+- **Reopened reason:** N/A.
+
+### PLATFORM-020: Platform Demo Seed Must Not Be Controller-Only Lifecycle Seed
+
+- [ ] Verify scheduling/planning seed follows the bootstrap rules.
+- **Problem:** Claude's visible queue says "Add scheduling demo seed data to DevController". That can be acceptable only as a temporary explicit dev/demo endpoint. It violates the master requirements if it becomes the primary database lifecycle seed path.
+- **Expected behavior:** Reference/demo seed responsibilities live in controlled, idempotent seed/bootstrap classes under the real `Data/` structure. Any `DevController` seed endpoint is explicit, additive, demo-only, safe to rerun, and not the only place platform seed data exists.
+- **Likely files:** `Api/Controllers/DevController.cs`, `Data/Bootstrap/**`, `Data/DBInitializer.cs`, `Api/Program.cs`, `Api/appsettings*.json`.
+- **Verification required:** Code inspection showing seed path separation, config-controlled bootstrap behavior, no destructive reset use, and read-only API/DB proof that platform demo seed can be rerun safely without wiping demo data.
+- **Regression checklist:** `QA-BOOT-001`, `QA-BOOT-002`, `QA-DATA-005`.
+- **Latest Codex check:** 2026-04-28. `Api/Controllers/DevController.cs` has scheduling resource/assignment seed code and build passes. Still open: Codex has not verified that equivalent platform seed is separated into controlled `Data/Bootstrap` lifecycle seed classes, nor that the dev seed is additive/idempotent for the new scheduling records.
+- **Reopened reason:** N/A.
+
+### PLATFORM-021: Project Planning Master Plan Docs Must Be Repo-Grounded
+
+- [ ] Verify Claude creates the project-planning master docs before coding.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 requirements.
+- **Problem:** The next planning prompt is research/architecture-only and explicitly says "Do NOT start coding yet." If Claude codes first or writes generic docs, the plan will not be useful as an implementation contract.
+- **Expected behavior:** Claude inspects the actual repo and creates `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_MASTER_TODO.md`, `PROJECT_PLANNING_DATA_MODEL.md`, and `PROJECT_PLANNING_UI_MAP.md`. The docs must use actual repo structure/names and distinguish reuse existing, extend existing, and build new.
+- **Likely files:** `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_MASTER_TODO.md`, `PROJECT_PLANNING_DATA_MODEL.md`, `PROJECT_PLANNING_UI_MAP.md`, possibly `docs/IMPLEMENTATION_WORKLOG.md` if Claude records the planning pass.
+- **Verification required:** Codex reads all four docs, checks them against the actual repo and Joseph's prompt, and reports PASS/FAIL. No source-code implementation should be accepted under this item.
+- **Regression checklist:** `QA-PLAN-006`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-022: Project Planning Domain Model Must Cover Timeline, Gantt, Calendar, And Hierarchy
+
+- [ ] Verify project-planning domain model depth.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 requirements.
+- **Problem:** A generic task list or simple calendar would miss the core requirement: project -> phase -> task -> subtask -> step-out plan, with baselines, milestones, planned/actual dates, variance, Gantt/calendar views, and drill-down.
+- **Expected behavior:** The plan defines entities/relationships for ProjectPlan, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, TimelineBaseline, TimelineVariance, CalendarEntry/equivalent, audit/status/ownership fields, and hierarchy/dependency storage.
+- **Likely files:** `PROJECT_PLANNING_DATA_MODEL.md`, `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_UI_MAP.md`.
+- **Verification required:** Codex confirms each required entity/capability is present, ownership is stated, fields/relationships are specified, and performance/migration risks for deep hierarchies are discussed.
+- **Regression checklist:** `QA-PLAN-007`, `QA-PLAN-009`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-023: Project Planning Must Define Estimate/FCO Traceability And Schedule Health
+
+- [ ] Verify traceability and ahead/behind model.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 requirements.
+- **Problem:** The planning platform must prove traceability from estimate -> FCO -> project task and task -> FCO -> estimate, and it must calculate whether work is ahead, on track, or behind. These cannot be vague dashboard labels.
+- **Expected behavior:** The plan defines source of truth for estimates, FCOs, project plans, phases, tasks, milestones, step-out plans, and scheduling assignments. It also defines validation for missing/mismatched estimate/FCO links, what happens when estimates/FCOs change, and formulas for planned finish, actual finish, forecast finish, percent complete, schedule variance, milestone/phase/task slippage, critical tasks, overdue status, and downstream impact.
+- **Likely files:** `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_DATA_MODEL.md`, `PROJECT_PLANNING_UI_MAP.md`.
+- **Verification required:** Codex checks the traceability model and ahead/behind formulas against Joseph's requirements and flags any missing source-of-truth or data-integrity rules.
+- **Regression checklist:** `QA-PLAN-008`, `QA-PLAN-010`, `QA-FCO-002`.
 - **Reopened reason:** N/A.
 
 

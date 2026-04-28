@@ -8,7 +8,7 @@ export const estimateFormRoutes = [
         meta: {
             title: 'New Estimate',
             breadcrumbItems: () => [
-                { label: apps.estimating.name },
+                { label: apps.estimating.name, to: '/portal' },
                 { label: 'Estimates', to: '/estimating/estimates' },
                 { label: 'New' },
             ],
@@ -21,7 +21,7 @@ export const estimateFormRoutes = [
         meta: {
             title: 'Edit Estimate',
             breadcrumbItems: () => [
-                { label: apps.estimating.name },
+                { label: apps.estimating.name, to: '/portal' },
                 { label: 'Estimates', to: '/estimating/estimates' },
                 { label: 'Edit' },
             ],

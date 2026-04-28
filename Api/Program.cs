@@ -10,6 +10,7 @@ using Stronghold.EnterpriseEstimating.Api.Authorization;
 using Stronghold.EnterpriseEstimating.Api.Domain;
 using Stronghold.EnterpriseEstimating.Api.Services;
 using Stronghold.EnterpriseEstimating.Data;
+using Stronghold.EnterpriseEstimating.Data.Bootstrap;
 using ZymLabs.NSwag.FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -122,7 +123,7 @@ builder.Services.AddOpenApiDocument(
         configure.DocumentName = "v1";
         configure.ApiGroupNames = new[] { "v1" };
         configure.Title = "Stronghold Enterprise Estimating API";
-        configure.SchemaProcessors.Add(serviceProvider.GetService<FluentValidationSchemaProcessor>());
+        configure.SchemaSettings.SchemaProcessors.Add(serviceProvider.GetService<FluentValidationSchemaProcessor>());
         configure.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("Bearer"));
         configure.AddSecurity("Bearer", Enumerable.Empty<string>(), new OpenApiSecurityScheme
         {
@@ -155,6 +156,13 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddScoped<ReferenceDataSeeder>();
+builder.Services.AddScoped<DemoDataSeeder>();
+builder.Services.AddScoped<DatabaseBootstrapper>();
+builder.Services.AddScoped<SchedulingDemandService>();
+builder.Services.AddScoped<AssignmentConflictService>();
+builder.Services.AddScoped<CoverageCalculationService>();
+builder.Services.AddScoped<SuggestedMatchService>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
@@ -167,19 +175,20 @@ if (isLocal)
     app.UseOpenApi();
     app.UseMigrationsEndPoint();
     app.UseDeveloperExceptionPage();
-    app.UseSwaggerUi3();
+    app.UseSwaggerUi();
 }
 else
 {
     app.UseHsts();
 }
 
-if (hasSqlConnectionString && !skipDatabaseInitialization)
+var autoMigrateOnStartup = app.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup", defaultValue: true);
+
+if (hasSqlConnectionString && !skipDatabaseInitialization && autoMigrateOnStartup)
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
-    DbInitializer.Initialize(context);
+    var bootstrapper = scope.ServiceProvider.GetRequiredService<DatabaseBootstrapper>();
+    await bootstrapper.RunAsync();
 }
 
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());

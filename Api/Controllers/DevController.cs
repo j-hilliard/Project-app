@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models;
+using Stronghold.EnterpriseEstimating.Data.Models.Scheduling;
 
 namespace Stronghold.EnterpriseEstimating.Api.Controllers;
 
 [ApiController]
 [ApiVersionNeutral]
 [AllowAnonymous]
+[Route("api/v{version:apiVersion}/dev")]
 [Route("api/v1.0/dev")]
 public class DevController : ControllerBase
 {
@@ -41,10 +43,11 @@ public class DevController : ControllerBase
         await SeedDemoValeroEstimates(db);
         await AssignRateBooksToEstimates(db);
         await SeedSequences(db);
+        await SeedSchedulingData(db);
 
         return Ok(new
         {
-            message = "Seed complete (additive — existing data preserved). CSL + ETS estimates, rate books, crew templates, staffing plans seeded where missing.",
+            message = "Seed complete (additive — existing data preserved). CSL + ETS estimates, rate books, crew templates, staffing plans, scheduling resources seeded where missing.",
         });
     }
 
@@ -1950,6 +1953,111 @@ public class DevController : ControllerBase
             new EstimateSequence { CompanyCode = "ETS", Year = 2026, SequenceType = "Estimate",     LastSequence = 12 },
             new EstimateSequence { CompanyCode = "ETS", Year = 2026, SequenceType = "StaffingPlan", LastSequence = 5  }
         );
+        await db.SaveChangesAsync();
+    }
+
+    // ── Scheduling Demo Data ──────────────────────────────────────────────────
+
+    private static async Task SeedSchedulingData(AppDbContext db)
+    {
+        // Idempotent: skip if any resources exist for CSL
+        if (await db.Resources.AnyAsync(r => r.CompanyCode == "CSL")) return;
+
+        // Crafts (shared reference data — upsert by CraftCode)
+        var craftCodes = new[] { "PP", "EL", "CR" };
+        var existingCrafts = await db.Crafts
+            .Where(c => craftCodes.Contains(c.CraftCode))
+            .Select(c => c.CraftCode)
+            .ToHashSetAsync();
+
+        if (!existingCrafts.Contains("PP"))
+            db.Crafts.Add(new Craft { CraftCode = "PP", Title = "Pipefitter", IsDirect = true });
+        if (!existingCrafts.Contains("EL"))
+            db.Crafts.Add(new Craft { CraftCode = "EL", Title = "Electrician", IsDirect = true });
+        if (!existingCrafts.Contains("CR"))
+            db.Crafts.Add(new Craft { CraftCode = "CR", Title = "Crane Operator", IsDirect = true });
+
+        await db.SaveChangesAsync();
+
+        var today = DateTime.UtcNow.Date;
+
+        // Resources
+        var mike = new Resource { CompanyCode = "CSL", Name = "Mike Torres",    CraftCode = "PP", Branch = "Branch A", IsActive = true };
+        var sarah = new Resource { CompanyCode = "CSL", Name = "Sarah Vance",   CraftCode = "PP", Branch = "Branch A", IsActive = true };
+        var darren = new Resource { CompanyCode = "CSL", Name = "Darren Hill",  CraftCode = "EL", Branch = "Branch B", IsActive = true };
+        var angela = new Resource { CompanyCode = "CSL", Name = "Angela Reyes", CraftCode = "CR", Branch = "Branch A", IsActive = true };
+
+        db.Resources.AddRange(mike, sarah, darren, angela);
+        await db.SaveChangesAsync();
+
+        // Certifications
+        db.Certifications.AddRange(
+            new Certification { ResourceId = mike.ResourceId,   Type = "OSHA-30",      ExpirationDate = new DateTime(2027, 1, 1) },
+            new Certification { ResourceId = mike.ResourceId,   Type = "H2S",          ExpirationDate = new DateTime(2026, 6, 1) },
+            new Certification { ResourceId = sarah.ResourceId,  Type = "OSHA-10",      ExpirationDate = new DateTime(2026, 12, 1) },
+            new Certification { ResourceId = darren.ResourceId, Type = "OSHA-30",      ExpirationDate = new DateTime(2027, 3, 1) },
+            new Certification { ResourceId = angela.ResourceId, Type = "Crane-Operator", ExpirationDate = new DateTime(2027, 6, 1) }
+        );
+
+        // Find a real CSL estimate to link assignments to
+        var jobA = await db.Estimates
+            .Where(e => e.CompanyCode == "CSL" && (e.Status == "Awarded" || e.Status == "Pending"))
+            .OrderBy(e => e.EstimateId)
+            .FirstOrDefaultAsync();
+
+        var jobB = await db.Estimates
+            .Where(e => e.CompanyCode == "CSL" && (e.Status == "Awarded" || e.Status == "Pending"))
+            .OrderBy(e => e.EstimateId)
+            .Skip(1)
+            .FirstOrDefaultAsync();
+
+        if (jobA != null)
+        {
+            // Mike and Sarah: ending in 5 days → appear in "ending soon"
+            db.Assignments.AddRange(
+                new Assignment
+                {
+                    CompanyCode = "CSL", ResourceId = mike.ResourceId,
+                    JobSourceType = "Estimate", JobSourceId = jobA.EstimateId,
+                    JobName = jobA.Name, CraftCode = "PP",
+                    Start = today.AddDays(-30), End = today.AddDays(5),
+                    Shift = "Day", Status = "Confirmed", CreatedBy = "seed"
+                },
+                new Assignment
+                {
+                    CompanyCode = "CSL", ResourceId = sarah.ResourceId,
+                    JobSourceType = "Estimate", JobSourceId = jobA.EstimateId,
+                    JobName = jobA.Name, CraftCode = "PP",
+                    Start = today.AddDays(-30), End = today.AddDays(5),
+                    Shift = "Day", Status = "Confirmed", CreatedBy = "seed"
+                }
+            );
+        }
+
+        var jobBEstimate = jobB ?? jobA;
+        if (jobBEstimate != null)
+        {
+            // Darren and Angela: long-running, 60 days out
+            db.Assignments.AddRange(
+                new Assignment
+                {
+                    CompanyCode = "CSL", ResourceId = darren.ResourceId,
+                    JobSourceType = "Estimate", JobSourceId = jobBEstimate.EstimateId,
+                    JobName = jobBEstimate.Name, CraftCode = "EL",
+                    Start = today.AddDays(-10), End = today.AddDays(60),
+                    Shift = "Day", Status = "Confirmed", CreatedBy = "seed"
+                },
+                new Assignment
+                {
+                    CompanyCode = "CSL", ResourceId = angela.ResourceId,
+                    JobSourceType = "Estimate", JobSourceId = jobBEstimate.EstimateId,
+                    JobName = jobBEstimate.Name, CraftCode = "CR",
+                    Start = today.AddDays(-10), End = today.AddDays(60),
+                    Shift = "Day", Status = "Confirmed", CreatedBy = "seed"
+                }
+            );
+        }
+
         await db.SaveChangesAsync();
     }
 

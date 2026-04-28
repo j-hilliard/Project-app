@@ -7,7 +7,7 @@ export const staffingListRoutes = [
         component: () => import('@/modules/estimating/features/staffing-list/views/StaffingListView.vue'),
         meta: {
             title: 'Staffing Plans',
-            breadcrumbItems: () => [{ label: apps.estimating.name }, { label: 'Staffing Plans' }],
+            breadcrumbItems: () => [{ label: apps.estimating.name, to: '/portal' }, { label: 'Staffing Plans' }],
         },
     },
 ];

@@ -827,6 +827,48 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - Existing completed/accepted AI demo items in `docs/LIVE_QA_TODO.md` remain closed unless fresh evidence fails.
   - Cost Book data is not deleted, reset, or replaced.
 
+### QA-PLAT-005: Planning Docs Are Requirements-Traceable Before Coding
+- **Platform requirement:** Claude's scheduling/planning step-out docs must be verified against Joseph's requirements before implementation starts.
+- **Verify:**
+  - `SCHEDULING_STEP_OUT_PLAN.md` and `SCHEDULING_TODO.md` exist when Claude claims planning is complete.
+  - The docs are grounded in actual repo paths and naming, not invented greenfield structure.
+  - Each Joseph requirement is mapped to acceptance criteria or an explicit open question/risk.
+  - Missing requirements become open items in `docs/LIVE_QA_TODO.md` before coding is accepted.
+  - Claude does not treat planning-doc completion as implementation completion.
+
+### QA-PLAT-006: Platform Requirements Traceability Map Is Current
+- **Platform requirement:** Joseph's master requirements must be testable and traceable before Codex verifies Claude's work.
+- **Verify:**
+  - `docs/PLATFORM_REQUIREMENTS_TRACEABILITY.md` exists.
+  - It maps the master requirements to live QA gates and regression checklist IDs.
+  - New Joseph requirements are added to the map before related implementation is accepted.
+  - Any missing or ambiguous requirement becomes an open live QA item instead of being silently assumed.
+
+### QA-PLAT-007: Phase Definition-Of-Done Requires Tests And Evidence
+- **Platform requirement:** A platform phase is not complete until implementation, tests, worklog, regression updates, and evidence are complete.
+- **Verify:**
+  - Claude's claimed phase includes updated `docs/LIVE_TODO.md`, `docs/IMPLEMENTATION_WORKLOG.md`, and `docs/TEST_RUN_LOG.md`.
+  - Backend build and frontend build were run or a blocker is documented.
+  - Available tests/regressions were run or their absence is documented.
+  - UI-visible changes have screenshot evidence.
+  - Failures are listed with likely cause and next action.
+
+### QA-PLAT-008: Generated API Client / NSwag Sync Is Handled
+- **Platform requirement:** API surface changes must stay aligned with frontend integration.
+- **Verify:**
+  - Claude identifies whether this repo uses generated clients for the touched endpoints.
+  - If generated clients are used, the proper NSwag/openapi generation command is run and documented.
+  - If direct API calls are used for a temporary slice, that decision is documented with follow-up risk.
+  - Build warnings related to NSwag/client generation are recorded and assessed, not hand-waved.
+
+### QA-PLAT-009: Core Demand And Coverage Logic Is Not Frontend-Only
+- **Platform requirement:** Core operational truth should be reusable and testable, not trapped in Vue computed logic.
+- **Verify:**
+  - Scheduling demand aggregation is implemented in backend/shared services or read models.
+  - Converted-plan dedupe is tested or directly verifiable outside a Vue view.
+  - Coverage gaps, assignment conflicts, ending-soon, and available-soon logic are not only browser-side calculations.
+  - Vue views/stores consume backend/read-model outputs for operational truth and focus on presentation/workflow state.
+
 ---
 
 ## Database Bootstrap / Seed
@@ -840,6 +882,27 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - Demo seed is configurable and not assumed for higher environments.
   - Seed logic is idempotent and safe to rerun.
   - Seed logic is not moved into a controller as the primary lifecycle path.
+
+### QA-BOOT-002: Platform Demo Seed Is Not Controller-Only
+- **Platform requirement:** Demo seed may have an explicit dev endpoint, but lifecycle seed must be controlled, separated, and idempotent.
+- **Verify:**
+  - Scheduling/planning reference data and demo data are not only implemented inside `DevController`.
+  - Any `DevController` seed endpoint is explicit, additive, demo-only, and safe to rerun.
+  - Startup/bootstrap config decides whether reference/demo seed runs.
+  - Seed code does not wipe live/demo data without explicit approval.
+
+---
+
+## Platform Demo Data
+
+### QA-DATA-005: Platform Demo Seed Proves Scheduling And Planning Scenarios
+- **Platform requirement:** Platform demo data must prove the Planning/Scheduling workflows, not just populate empty screens.
+- **Verify:**
+  - Demo data includes resources/people, crafts, certifications where implemented, assignments, availability, and at least one conflict.
+  - Demo data includes one approved unconverted staffing plan that appears as demand.
+  - Demo data includes one converted staffing plan that does not appear as separate demand.
+  - Demo data includes shortages by craft, assignments ending soon, and people becoming available soon.
+  - Demo data includes at least one step-out plan and generated/schedulable work package when Planning foundation is claimed complete.
 
 ---
 
@@ -873,6 +936,57 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - A step-out plan can generate one or more work packages.
   - Work packages include source link, craft/headcount, planned dates, status, client/site refs, and scheduling-ready demand fields.
   - Scheduling demand includes work packages with ready/schedulable status.
+
+### QA-PLAN-005: Planning Dashboard And Handoff Views Are Functional
+- **Platform requirement:** Planning / PM is an operational app, not only data tables.
+- **Verify:**
+  - Planning dashboard shows plans by status, plans needing staffing, upcoming work packages, and blocked plans where data exists.
+  - Step-Out Plan Detail / Editor supports add/remove/reorder steps, dependencies, craft/headcount, duration, status, and notes.
+  - Work Package / Scheduling Handoff view makes it clear which packages are ready for scheduling.
+  - Planning UI does not mutate estimate commercial fields directly.
+
+### QA-PLAN-006: Project Planning Master Docs Are Repo-Grounded
+- **Project-planning requirement:** Claude must create the four planning documents from actual repo inspection before coding.
+- **Verify:**
+  - `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_MASTER_TODO.md`, `PROJECT_PLANNING_DATA_MODEL.md`, and `PROJECT_PLANNING_UI_MAP.md` exist.
+  - The docs identify actual repo structure, frontend modules, backend controllers/services, EF DbContext/migrations/bootstrap, auth/company scoping, API conventions, and existing estimate/planning/scheduling concepts.
+  - The docs recommend exactly where the project-planning capability lives and how it fits the shared portal.
+  - The docs distinguish reuse existing, extend existing, and build new.
+  - No implementation/source-code change is claimed as part of this planning-only gate.
+
+### QA-PLAN-007: Project Planning Domain Model Covers Required Entities
+- **Project-planning requirement:** The proposed domain model must support the full project planning hierarchy and timeline concepts.
+- **Verify:**
+  - Plan covers ProjectPlan, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, EstimateLink, FcoLink, TimelineBaseline, TimelineVariance, and CalendarEntry/equivalent.
+  - Each entity has purpose, owner, key fields, relationships, and app boundary classification.
+  - Hierarchy storage and dependency storage strategies are specified.
+  - Audit/status/ownership fields are addressed.
+
+### QA-PLAN-008: Estimate / FCO / Task Traceability Model Is Explicit
+- **Project-planning requirement:** Tasks, FCOs, and estimates must be traceable both directions with clear source-of-truth rules.
+- **Verify:**
+  - Plan defines how tasks link to estimates and FCOs.
+  - Plan defines how FCOs link to estimates.
+  - Plan defines validation for missing estimate links, missing FCO links, and mismatched FCO/estimate/task links.
+  - Plan states estimate source of truth remains Estimating and FCO source of truth is owned by the appropriate Planning/FCO model.
+  - Plan states what happens when an estimate changes, an FCO changes, or a task loses/mismatches linkage.
+
+### QA-PLAN-009: Gantt, Calendar, And Drill-Down Share One Planning Model
+- **Project-planning requirement:** Gantt, calendar, and task detail must be different views of the same plan data.
+- **Verify:**
+  - Plan explains how Gantt visualizes project/phase/task timelines and dependencies.
+  - Plan explains how Calendar visualizes tasks, due dates, milestones, workload, and filters.
+  - Plan explains drill-down from project -> phase -> task -> subtask -> step-out plan.
+  - Plan avoids separate disconnected data stores for Gantt, calendar, and task detail.
+  - UI map includes routes/pages/components and breadcrumb/drill-down behavior.
+
+### QA-PLAN-010: Ahead/Behind And Schedule Health Logic Is Defined
+- **Project-planning requirement:** The platform must determine ahead, on track, behind, and downstream impact.
+- **Verify:**
+  - Plan defines planned start/finish, actual start/finish, forecast finish, duration, percent complete, baseline, current schedule, and variance.
+  - Plan gives formulas or concrete logic for schedule variance, milestone slippage, phase slippage, task slippage, overdue detection, and ahead/on-track/behind indicators.
+  - Plan describes dependency impact when a task slips.
+  - Plan addresses upcoming milestone awareness and critical path considerations where appropriate.
 
 ---
 
@@ -916,6 +1030,33 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - Assignments during PTO/blackout/unavailable blocks are detected.
   - Certification/skill mismatch is detected or explicitly documented as a future-phase gap with TODO coverage.
 
+### QA-SCHED-006: Scheduling Plan Covers Required Business Workflows
+- **Platform requirement:** Scheduling must support the business workflows Joseph listed, not just generic calendar screens.
+- **Verify:**
+  - Plan covers estimates/staffing data feeding scheduling through explicit source rules.
+  - Plan covers placing people on jobs, moving people to another job when one is ending, and notifying when people are about to become available.
+  - Plan covers craft filtering/sorting, craft shortages, staffing gaps, current/upcoming work, and job ending visibility.
+  - Plan documents how Scheduling stays separate from Estimating while still consuming estimate/staffing inputs.
+  - Any deferred workflow is clearly listed with risk, phase, and acceptance criteria.
+
+### QA-SCHED-007: Scheduling Filters, Boards, And Reassignment UX Work
+- **Platform requirement:** Users need to actually work the schedule, not just view counts.
+- **Verify:**
+  - Jobs/work board can filter by craft, date range, status, and branch/location where those fields exist.
+  - Resources/people board can filter or group by craft.
+  - Assignment workflow can place or reassign a person to a job/work package.
+  - Ending-soon jobs or assignments provide a clear path to move people to another job.
+  - Shortages and conflicts are visually highlighted, not buried in raw JSON.
+
+### QA-SCHED-008: Coverage Dashboard Compares Demand, Assigned, Available, And Gaps
+- **Platform requirement:** Forecasting/dashboard must compare operational demand against actual staffing capacity.
+- **Verify:**
+  - Coverage output shows demand by craft for the selected date range.
+  - Assigned headcount is shown separately from demand.
+  - Available resources are shown separately from assigned resources.
+  - Gaps/shortages by craft are calculated from demand minus assigned/available context.
+  - Jobs/work packages ending soon and resources freeing up soon appear in the same operational dashboard or linked panels.
+
 ---
 
 ## Actuals / Estimate Delta
@@ -939,6 +1080,15 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - FCO/change record links to an estimate.
   - Generated document includes project/client info, change number/date, changed scope, reason/basis, schedule impact, cost breakdown, updated value, status, and approval/signature fields.
   - Document can be printed/PDF-ready or otherwise reviewed without exposing internal-only fields unless intended.
+
+### QA-FCO-002: Project Planning Plan Defines FCO Ownership And Integrity
+- **Project-planning requirement:** FCOs must be connected to estimates and tasks with clear ownership and validation.
+- **Verify:**
+  - Project-planning master docs identify whether an FCO concept already exists in the repo.
+  - If FCO is not clearly defined, docs label assumptions and propose the implementation approach.
+  - FCO links enforce estimate association.
+  - Tasks associated with FCOs can be traced back to the estimate.
+  - Mismatched task/FCO/estimate relationships are treated as validation defects or review items.
 
 ---
 

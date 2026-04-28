@@ -7,7 +7,7 @@ export const estimateListRoutes = [
         component: () => import('@/modules/estimating/features/estimate-list/views/EstimateListView.vue'),
         meta: {
             title: 'Estimates',
-            breadcrumbItems: () => [{ label: apps.estimating.name }, { label: 'Estimates' }],
+            breadcrumbItems: () => [{ label: apps.estimating.name, to: '/portal' }, { label: 'Estimates' }],
         },
     },
 ];

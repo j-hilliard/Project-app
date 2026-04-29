@@ -606,9 +606,349 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 - **Regression checklist:** `QA-AI-014`.
 - **Reopened reason:** N/A.
 
+## PM + Scheduling Full Sweep Findings
+
+These findings came from the 2026-04-29 Codex PM/Scheduling audit in the active `Project-app` repo only. Evidence handoff: `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`. Screenshot packet: `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/`.
+
+### PM-SCHED-001: Playwright Config Can Audit The Old Repo Instead Of Project-app
+
+- [ ] Fix Project-app Playwright target ports and guard against old-repo false positives.
+- **Area/module:** QA infrastructure / Playwright / repo safety.
+- **Severity:** Critical.
+- **Type:** Regression / QA Infrastructure.
+- **Route/screen:** All PM + Scheduling route tests when using `webapp/playwright.config.ts`.
+- **Repro steps:** In `Project-app`, inspect `webapp/playwright.config.ts`; it uses baseURL `https://localhost:7210` and API base `https://localhost:7211`. Inspect port owners while both repos are active.
+- **Expected behavior:** Project-app QA runs must target Project-app ports only (`7310/7311`) or an explicitly isolated QA port pair. Tests must not be able to pass against the old handoff repo.
+- **Actual behavior:** Port inspection showed `7210/7211` are owned by the old `stronghold-enterprise-estimating` repo while Project-app owns `7310/7311`. Earlier smoke evidence against `7210/7211` is invalid for Project-app.
+- **Why it matters:** This can falsely certify the wrong application. It is the fastest way to ship regressions while thinking QA passed.
+- **Suggested fix direction:** Update Project-app Playwright config or add a dedicated Project-app config/env guard. Add a startup assertion that page URL/API process path belongs to Project-app before route tests run.
+- **Screenshots/evidence:** `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`; port evidence in TEST_RUN_LOG. Superseded warning added to `docs/QA_EVIDENCE_20260429_PROJECT_APP_RUNTIME.md`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-PLAT-011`, `QA-UI-010`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-002: Module Root Redirects Render Blank Pages
+
+- [ ] Fix `/planning` and `/scheduling` root redirects.
+- **Area/module:** Planning router / Scheduling router.
+- **Severity:** Critical.
+- **Type:** Bug / Navigation.
+- **Route/screen:** `/planning`, `/scheduling`.
+- **Repro steps:** Open `https://localhost:7310/planning` and `https://localhost:7310/scheduling` in the Project-app audit browser.
+- **Expected behavior:** `/planning` should land on `/planning/projects`; `/scheduling` should land on `/scheduling/dashboard` with visible app shell content.
+- **Actual behavior:** The audit resolved `/planning` to `https://localhost:7310/projects` and `/scheduling` to `https://localhost:7310/dashboard`, both near-blank pages.
+- **Why it matters:** Top-level app entry routes are dead ends. Users can click into a module and land on an empty route.
+- **Suggested fix direction:** Use absolute child redirects or router redirect objects that preserve the parent module prefix.
+- **Screenshots/evidence:** `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning.png`, `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling.png`, route JSON in `pm-scheduling-audit-results.json`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-PLAT-004`, `QA-PLAN-011`, `QA-SCHED-010`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-003: Dense Enterprise Row Standard Is Not Applied Across PM And Scheduling
+
+- [ ] Normalize PM + Scheduling list density to Work Orders baseline.
+- **Area/module:** Planning UI / Scheduling UI.
+- **Severity:** High.
+- **Type:** Visual / UX.
+- **Route/screen:** `/planning/step-out-plans`, `/planning/work-packages`, `/planning/fco`, `/scheduling/jobs`, `/scheduling/resources`, `/scheduling/assignments`, `/scheduling/roll-off`.
+- **Repro steps:** Run the Project-app PM/Scheduling audit and compare row heights to `/planning/work-orders`.
+- **Expected behavior:** Work Orders baseline row height is about 46px. PM + Scheduling rows should stay in the 44-48px target range with one-line cells, compact chips, consistent pagination, and ellipsis.
+- **Actual behavior:** Several screens render 65-68px rows. Work Packages and Jobs Board are visibly taller/airier than the baseline.
+- **Why it matters:** The app feels like multiple unrelated admin prototypes rather than one operations platform. It also wastes screen space on schedule-critical lists.
+- **Suggested fix direction:** Apply one shared dense grid/table class and remove per-view padding that inflates rows. Verify with Playwright row-height checks per route.
+- **Screenshots/evidence:** `planning-step-out-plans.png`, `planning-work-packages.png`, `planning-fco.png`, `scheduling-jobs.png`, `scheduling-resources.png`, `scheduling-assignments.png`, `scheduling-roll-off.png` under `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-UI-011`, `QA-PLAN-012`, `QA-SCHED-011`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-004: Jobs Board Does Not Show Forecast vs Released Demand State
+
+- [ ] Add visible Forecast/Released demand state and enforce assignability in UI.
+- **Area/module:** Scheduling Jobs Board.
+- **Severity:** High.
+- **Type:** Logic / UX.
+- **Route/screen:** `/scheduling/jobs`.
+- **Repro steps:** Open Jobs Board and inspect demand rows.
+- **Expected behavior:** Every demand row shows `Forecast` or `Released`. Forecast rows are visible but non-assignable. Released rows are assignable. Assignment controls must explain why Forecast is blocked.
+- **Actual behavior:** Rows show source/status labels like `Estimate`, `StaffingPlan`, `Awarded`, `Approved`, and `Pending`; the locked `Forecast` / `Released` demand-state badge is not visible.
+- **Why it matters:** Schedulers cannot tell which work is formally released. This violates the locked demand model and can lead to assigning people to unreleased work.
+- **Suggested fix direction:** Return `demandState` and `isAssignable` from the demand endpoint, render badges/filter, and disable Assign with tooltip for Forecast rows.
+- **Screenshots/evidence:** `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-jobs.png`; `pm-scheduling-audit-results.md`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-SCHED-001`, `QA-SCHED-010`, `QA-SCHED-012`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-005: Assignment Creation Can Bypass Released-Demand And Craft Controls
+
+- [ ] Enforce server-side Released-demand assignment gate and controlled craft selection.
+- **Area/module:** Scheduling API / Assignments UI.
+- **Severity:** Critical.
+- **Type:** Logic / Data.
+- **Route/screen:** `/scheduling/jobs`, `/scheduling/assignments`, `POST/PUT /api/v1/scheduling/assignments`.
+- **Repro steps:** Inspect `SchedulingController.CreateAssignment`, `SchedulingDemandService`, `JobsBoardView`, and `AssignmentsView`.
+- **Expected behavior:** Server rejects assignments unless target demand is a WorkPackage with `ReadyForScheduling=true` and backing WorkOrder status `Released` or `InProgress`. Craft must come from controlled craft reference data, not free text.
+- **Actual behavior:** Assignment save accepts source type/id patterns and free-text `craftCode`; forecast/unreleased demand is not blocked server-side. UI still has free-text craft inputs and fallback craft defaults.
+- **Why it matters:** This can create operationally invalid assignments, corrupt coverage, and violate the personnel-only scheduling model.
+- **Suggested fix direction:** Add demand-state validation in assignment create/update, normalize Craft/CraftId model, require selected demand/job, and reject `Estimate`/`StaffingPlan` assignment targets with HTTP 422 `DemandNotReleased`.
+- **Screenshots/evidence:** `scheduling-jobs.png`, `scheduling-assignments.png`; Logic Auditor findings for `SchedulingController.cs`, `SchedulingDemandService.cs`, `Assignment.cs`, `AppDbContext.cs`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-SCHED-001`, `QA-SCHED-002`, `QA-SCHED-013`, `QA-SCHED-014`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-006: Work Package Numbering And Interaction Are Inconsistent
+
+- [ ] Fix WorkPackage numbering display and row/toggle interaction.
+- **Area/module:** Planning Work Packages.
+- **Severity:** High.
+- **Type:** UX / Numbering / Interaction.
+- **Route/screen:** `/planning/work-packages`, `/planning/work-packages/:id`.
+- **Repro steps:** Open Work Packages list and Work Package detail; inspect displayed package identifiers and click behavior around the Ready for Scheduling toggle.
+- **Expected behavior:** Work packages display a canonical business package number consistently in list and detail. Ready toggle must not accidentally trigger row navigation. Field-facing detail should remain field-safe.
+- **Actual behavior:** List does not prove a WP number column, detail can show raw `WP-{packageId}` style numbering, and the ready toggle sits inside a clickable grid row risk area.
+- **Why it matters:** Raw database IDs look fake and break business trust. Toggle/navigation collisions cause accidental route changes while changing readiness.
+- **Suggested fix direction:** Add/display canonical `PackageNumber`; stop event propagation on readiness controls; verify list-to-detail click and field-safe detail with Playwright.
+- **Screenshots/evidence:** `planning-work-packages.png`; UI Explorer findings for WorkPackageListView and WorkPackageDetailView.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-PLAN-013`, `QA-UI-012`, `QA-DATA-006`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-007: Step-Out New Route Does Not Open A New Plan Form
+
+- [ ] Fix or remove dead `New Step-Out Plan` route.
+- **Area/module:** Planning Step-Out Plans.
+- **Severity:** Medium.
+- **Type:** Bug / UX.
+- **Route/screen:** `/planning/step-out-plans/new`.
+- **Repro steps:** Open `/planning/step-out-plans/new` from the app menu.
+- **Expected behavior:** The route should open a new step-out plan form, or the menu should only use the actual creation dialog on the list page.
+- **Actual behavior:** The route redirects back to the Step-Out Plans list; creation appears to live in a list dialog instead.
+- **Why it matters:** A visible `New Plan` navigation item behaves like a dead end and weakens user trust.
+- **Suggested fix direction:** Either make `/new` a real create route or remove the route/menu item and expose a clear list-page create action only.
+- **Screenshots/evidence:** `planning-step-out-plans-new.png`; UI Explorer finding for `StepOutPlanFormView` redirect behavior.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-PLAN-014`, `QA-UI-013`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-008: FCOs Are Not Hard-Gated To Estimate And WorkOrder
+
+- [ ] Enforce FCO Estimate + WorkOrder traceability.
+- **Area/module:** Planning FCO / Change Orders.
+- **Severity:** Critical.
+- **Type:** Logic / Data.
+- **Route/screen:** `/planning/fco`, `POST/PUT /api/v1/planning/fco`.
+- **Repro steps:** Inspect FCO model/controller and create/update paths.
+- **Expected behavior:** FCO requires both `LinkedEstimateId` and `LinkedWorkOrderId`, with same-company/same-estimate validation before save/submit/approval.
+- **Actual behavior:** FCO model links are nullable and controller saves without the full mandatory traceability gate.
+- **Why it matters:** Orphan or mismatched FCOs destroy change-control traceability and authorized-value protection.
+- **Suggested fix direction:** Add staged validation first, then schema enforcement after orphan audit/backfill. Add Playwright/API tests for missing/mismatched links.
+- **Screenshots/evidence:** `planning-fco.png`; Logic Auditor findings for `FcoDocument.cs`, `PlanningController.cs`, `AppDbContext.cs`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-FCO-003`, `QA-LIFE-004`, `QA-PLAN-015`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-009: WorkOrder Release And Status Gates Are Bypassable
+
+- [ ] Harden WorkOrder lifecycle gates.
+- **Area/module:** Planning Work Orders / Project lifecycle.
+- **Severity:** Critical.
+- **Type:** Logic / Regression.
+- **Route/screen:** `/planning/work-orders/:id`, `PATCH /api/v1/work-orders/{id}/status`, `PATCH /api/v1/work-orders/{id}/release`.
+- **Repro steps:** Inspect WorkOrder create/release/status endpoints.
+- **Expected behavior:** Released/InProgress transitions must go through the documented gates: awarded Estimate, active CommercialAuthorization, same estimate/project/company chain, authorized value checks, and release metadata.
+- **Actual behavior:** Status endpoint can set lifecycle status directly and release/create checks do not fully validate chain consistency.
+- **Why it matters:** Work can be released without the commercial/authorization chain the lifecycle model requires.
+- **Suggested fix direction:** Restrict legal transitions, route `Released` only through release endpoint, and validate same Estimate/CommercialAuthorization/Project/WorkOrder chain server-side.
+- **Screenshots/evidence:** `planning-work-orders.png`; Logic Auditor findings for `WorkOrderController.cs` and `ProjectController.cs`.
+- **Status:** Verified / Waiting for Claude.
+- **Regression checklist:** `QA-LIFE-002`, `QA-LIFE-003`, `QA-PLAN-016`.
+- **Reopened reason:** N/A.
+
+### PM-SCHED-010: Estimating Freeze Is Not Enforced Server-Side
+
+- [ ] Decide and implement an estimating-freeze guard if Joseph approves touching Estimating.
+- **Area/module:** Estimating boundary / lifecycle protection.
+- **Severity:** Critical.
+- **Type:** Logic / Boundary.
+- **Route/screen:** Estimate API write endpoints.
+- **Repro steps:** Inspect estimate update/delete/status/revision restore paths.
+- **Expected behavior:** Awarded/frozen estimates linked to Project/WorkOrder should not be mutated casually; changes should go through controlled revision/FCO/change workflows.
+- **Actual behavior:** Existing estimate endpoints can mutate headers/rows/summary/status/delete/restore without a lifecycle freeze guard.
+- **Why it matters:** The commercial baseline can change after execution planning starts, making variance and authorization controls untrustworthy.
+- **Suggested fix direction:** This fix requires Joseph approval because Estimating is frozen. If approved, centralize an `EstimateIsEditable` guard and block writes for Awarded/linked estimates except controlled workflows.
+- **Screenshots/evidence:** Logic Auditor findings for `EstimatesController.cs` and `RevisionsController.cs`.
+- **Status:** Verified / Waiting for Joseph decision before Claude touches Estimating.
+- **Regression checklist:** `QA-EST-020`, `QA-LIFE-008`.
+- **Reopened reason:** N/A.
+
+## Architecture / UI System Cleanup Guardrails
+
+These items are QA enforcement gates for Joseph's 2026-04-29 PM/Scheduling foundation cleanup. They are not feature requests. They are permanent architecture and tester rules that Claude must satisfy before cleanup work can be considered review-ready.
+
+### ARCH-001: PM/Scheduling Views Must Not Call ApiStore Directly
+
+- [ ] Enforce service-layer API access in PM and Scheduling views.
+- **Area/module:** Planning, Scheduling frontend architecture.
+- **Severity:** High.
+- **Type:** Architecture / Regression Guardrail.
+- **Route/screen:** All `webapp/src/modules/planning/**/views/*.vue` and `webapp/src/modules/scheduling/**/views/*.vue`.
+- **Repro steps:** After Claude's cleanup batch, scan PM/Scheduling views for `useApiStore`, `apiStore.api`, or direct generated-client access from views.
+- **Expected behavior:** Views orchestrate only. API/data access lives in module service files such as `projectService.ts`, `workOrderService.ts`, `resourceService.ts`, `assignmentService.ts`, `demandService.ts`, and `coverageService.ts`.
+- **Actual behavior:** Current cleanup directive identifies direct view-level API calls as a confirmed architecture defect requiring cleanup and automated checks.
+- **Why it matters:** Direct API calls in views make screens hard to test, duplicate error/loading logic, and blur UI orchestration with data access.
+- **Suggested fix direction:** Move API calls into module services and expose view state through composables such as `useEntityList`, `useAsyncState`, and feature-specific composables.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive; previous PM/Scheduling audit evidence `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-005`, `QA-ARCH-006`, `QA-ARCH-008`.
+- **Reopened reason:** N/A.
+
+### ARCH-002: PM/Scheduling Views Must Not Own Repeated Formatters Or Status Mappers
+
+- [ ] Enforce shared date, currency, and status helper usage.
+- **Area/module:** Planning, Scheduling frontend architecture.
+- **Severity:** High.
+- **Type:** Architecture / UI System.
+- **Route/screen:** All PM/Scheduling list, detail, drawer, modal, and dashboard views.
+- **Repro steps:** Scan PM/Scheduling views for local `fmtDate`, `fmtCurrency`, `statusSeverity`, `sourceTagSeverity`, or repeated one-off formatting/status helper functions.
+- **Expected behavior:** Shared formatting/status behavior lives in `webapp/src/ui/composables/`, `webapp/src/ui/components/`, or approved shared utilities. Tables use `MMM d, yyyy`; detail views use `MMMM d, yyyy`; status tags use shared severity rules.
+- **Actual behavior:** Current cleanup directive identifies one-off helpers in views as a confirmed defect.
+- **Why it matters:** Repeated helpers create inconsistent date formats, badge colors, and business labels route-to-route.
+- **Suggested fix direction:** Create and require shared `useDateFormat`, `useCurrencyFormat`, `useStatusTag`, `AppDateValue`, `AppCurrencyValue`, and `AppStatusTag`.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive; route screenshots under `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/`.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-007`, `QA-UI-013`.
+- **Reopened reason:** N/A.
+
+### ARCH-003: PM/Scheduling Must Use One Shared Dense UI System
+
+- [ ] Require shared UI primitives and dense enterprise list/table standards.
+- **Area/module:** Planning, Scheduling UI system.
+- **Severity:** High.
+- **Type:** Visual / Architecture / Regression Guardrail.
+- **Route/screen:** All PM/Scheduling routes.
+- **Repro steps:** Inspect PM/Scheduling views after cleanup and verify they use shared UI wrappers/components for page shell, header, filter bar, status tag, table/list, detail shell, row actions, and empty state.
+- **Expected behavior:** PM and Scheduling use the same global UI system under `webapp/src/ui/` and the same dense standard as Work Orders: compact rows, one-line cells, ellipsis, compact badges, aligned actions, consistent filters and pagination.
+- **Actual behavior:** Prior audit found mixed row heights and page-by-page visual improvisation; Joseph's cleanup directive makes shared UI system usage mandatory.
+- **Why it matters:** Mixed density and bespoke page scaffolding make the platform feel stitched together and slow down every future screen.
+- **Suggested fix direction:** Build and require `ModulePageShell`, `ModulePageHeader`, `ModuleFilterBar`, `EntityTable`, `EntityDetailShell`, `DetailCard`, `MetaGrid`, `AppButton`, `AppStatusTag`, `AppEmptyState`, `RowActionGroup`, and token/style files.
+- **Screenshots/evidence:** `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`; screenshots show Work Orders at 46px baseline and several screens at 65-68px rows.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-009`, `QA-UI-011`, `QA-PLAN-012`, `QA-SCHED-011`.
+- **Reopened reason:** N/A.
+
+### ARCH-004: Cleaned Backend Controllers Must Use Contracts Instead Of Raw EF Entities
+
+- [ ] Enforce DTO/request/response contracts for cleaned PM/Scheduling backend flows.
+- **Area/module:** API contracts/controllers/services.
+- **Severity:** High.
+- **Type:** Architecture / Backend.
+- **Route/screen:** `Api/Controllers/ProjectController.cs`, `WorkOrderController.cs`, `PlanningController.cs`, `SchedulingController.cs`, FCO/Actuals/Variance/Traceability controllers if present.
+- **Repro steps:** Scan cleaned controllers for `[FromBody] Project`, `[FromBody] WorkOrder`, `[FromBody] StepOutPlan`, `[FromBody] Resource`, `[FromBody] Assignment`, `[FromBody] FcoDocument`, or public response methods returning EF entities directly.
+- **Expected behavior:** Controllers are thin transport layers using contracts under `Api/Contracts/**` and delegating business rules to services under `Api/Services/**`.
+- **Actual behavior:** Current cleanup directive identifies raw EF request bodies/entity graph exposure as a confirmed backend structure defect.
+- **Why it matters:** Binding EF entities directly creates unstable API contracts, over-posting risk, and controller/domain coupling.
+- **Suggested fix direction:** Add request/response contracts and service methods for Projects, WorkOrders, Planning, Scheduling, FCO, Actuals, and Traceability flows.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive; prior Logic Auditor findings in PM/Scheduling sweep.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-002`, `QA-BE-001`, `QA-LIFE-003`, `QA-FCO-003`.
+- **Reopened reason:** N/A.
+
+### ARCH-005: AppDbContext Must Stay Configuration-Light
+
+- [ ] Split EF configuration into entity configuration classes and guard against inline model bloat.
+- **Area/module:** Data / EF Core.
+- **Severity:** High.
+- **Type:** Architecture / Data.
+- **Route/screen:** `Data/AppDbContext.cs`, `Data/Configurations/**`.
+- **Repro steps:** After cleanup, scan `Data/AppDbContext.cs` for inline `modelBuilder.Entity` configuration and verify configurations are applied by assembly scan.
+- **Expected behavior:** `AppDbContext` contains DbSets plus `ApplyConfigurationsFromAssembly`; entity configuration lives in `Data/Configurations/Core`, `Estimating`, `Planning`, and `Scheduling`.
+- **Actual behavior:** Current cleanup directive identifies centralized DbContext configuration as a confirmed structure defect.
+- **Why it matters:** A giant context file becomes a merge-conflict magnet and makes ownership by domain unclear.
+- **Suggested fix direction:** Move EF mapping into `IEntityTypeConfiguration<T>` classes and add an architecture check that fails inline configuration drift.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-001`, `QA-DATA-004`.
+- **Reopened reason:** N/A.
+
+### ARCH-006: Dev Seeding And Bootstrap Must Not Live In Monolith Controllers
+
+- [ ] Separate dev seed/reset orchestration from controller code.
+- **Area/module:** API startup, bootstrap, seeding.
+- **Severity:** Medium.
+- **Type:** Architecture / Data / Test Safety.
+- **Route/screen:** `Api/Controllers/DevController.cs`, `Api/Program.cs`, `Data/Bootstrap/**`, `Api/Services/Seeding/**`.
+- **Repro steps:** After cleanup, inspect `DevController` for large seed/reset orchestration blocks and verify orchestration lives in seeding/bootstrap services with explicit environment safety.
+- **Expected behavior:** Controllers expose narrow dev endpoints; seed/reference/demo/bootstrap logic lives in services with safe, idempotent behavior and clear config flags.
+- **Actual behavior:** Current cleanup directive identifies dev seed orchestration in the controller as a confirmed structure defect.
+- **Why it matters:** Seed/reset logic is high-risk; burying it in controllers can cause unsafe demo data changes and makes testing harder.
+- **Suggested fix direction:** Move orchestration into `Api/Services/Seeding/**` or `Data/Bootstrap/**`, preserve additive demo seed behavior, and document safe commands.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-010`, `QA-PLAT-012`.
+- **Reopened reason:** N/A.
+
+### ARCH-007: Architecture Check Scripts Must Fail Structural Drift
+
+- [ ] Add and run automated architecture checks for PM/Scheduling cleanup rules.
+- **Area/module:** Repo tooling / QA automation.
+- **Severity:** High.
+- **Type:** Architecture / Test Infrastructure.
+- **Route/screen:** `.scripts/architecture-checks/**` or `tools/architecture-checks/**`, package/build scripts if wired.
+- **Repro steps:** Run the architecture check command after cleanup and verify it fails for forbidden direct API usage, duplicate helpers, raw EF request bodies, inline DbContext configuration, and oversized cleaned views/controllers.
+- **Expected behavior:** The repo contains a simple, documented architecture-check command that Codex/Claude/testers can run after each cleanup batch.
+- **Actual behavior:** No permanent architecture checks are recorded yet.
+- **Why it matters:** Without automation, the repo will drift back as soon as the next feature lands.
+- **Suggested fix direction:** Add grep/script-based checks for forbidden frontend imports/usages, duplicate helpers, raw EF `[FromBody]` entity bodies, inline `modelBuilder.Entity`, and pragmatic file-size thresholds.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-007`, `QA-ARCH-008`.
+- **Reopened reason:** N/A.
+
+### ARCH-008: Cleanup Is Not Done Until QA Guardrails And Tester Rules Are Updated
+
+- [ ] Verify cleanup branch updates QA/Codex enforcement rules and definition of done.
+- **Area/module:** QA docs / tester operating model.
+- **Severity:** High.
+- **Type:** QA Process / Architecture.
+- **Route/screen:** `docs/LIVE_QA_TODO.md`, `docs/QA_REGRESSION_CHECKLIST.md`, `docs/TEST_RUN_LOG.md`, `docs/ARCHITECTURE_GUARDRAILS.md` if created.
+- **Repro steps:** Review cleanup branch docs and confirm architecture rules, regression checklist rows, test run commands, and definition-of-done language were updated with enforceable checks.
+- **Expected behavior:** Codex/testers fail the repo for PM/Scheduling architecture violations, not just broken clicks.
+- **Actual behavior:** Joseph has now made architecture/tester guardrails mandatory for the cleanup branch.
+- **Why it matters:** A cleanup without QA enforcement becomes tribal knowledge and decays quickly.
+- **Suggested fix direction:** Claude should create/update `docs/ARCHITECTURE_GUARDRAILS.md`, architecture-check scripts, QA regression lanes, and test-run instructions as part of the cleanup branch.
+- **Screenshots/evidence:** Joseph 2026-04-29 cleanup directive.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-011`.
+- **Reopened reason:** N/A.
+
 ## Verification Sweeps
 
-### 2026-04-29 Codex Sweep: Project-app Runtime Audit
+### 2026-04-29 Codex Sweep: PM + Scheduling Full Audit
+
+Evidence handoff: `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`
+
+Screenshot packet: `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/`
+
+Execution mode: manual polling mode, not background watch.
+
+Build/runtime context:
+
+- Active repo verified as `Project-app` on branch `feat/pm-module`.
+- Project-app ports are `7310/7311`; old repo ports are `7210/7211` and must not be used for this audit.
+- QA-only Playwright script ran against Project-app `https://localhost:7310` and API `https://localhost:7311`.
+
+| ID | Verdict | Evidence |
+|----|---------|----------|
+| PM-SCHED-001 | FAIL / OPEN | Playwright config points to old repo ports `7210/7211`; old smoke evidence superseded. |
+| PM-SCHED-002 | FAIL / OPEN | `/planning` and `/scheduling` root routes render near-blank due bad module redirects. |
+| PM-SCHED-003 | FAIL / OPEN | Multiple PM/Scheduling lists exceed Work Orders 46px baseline with 65-68px rows. |
+| PM-SCHED-004 | FAIL / OPEN | Jobs Board lacks visible `Forecast` / `Released` demand-state badges. |
+| PM-SCHED-005 | FAIL / OPEN | Assignment create/update can bypass released-demand/craft controls. |
+| PM-SCHED-006 | FAIL / OPEN | WorkPackage numbering/detail/toggle interaction inconsistent. |
+| PM-SCHED-007 | FAIL / OPEN | `/planning/step-out-plans/new` redirects back to list rather than create form. |
+| PM-SCHED-008 | FAIL / OPEN | FCO links to Estimate and WorkOrder are not hard-gated. |
+| PM-SCHED-009 | FAIL / OPEN | WorkOrder release/status gates can be bypassed. |
+| PM-SCHED-010 | OPEN / JOSEPH DECISION REQUIRED | Estimating freeze guard would require touching frozen Estimating endpoints. |
+### 2026-04-29 Codex Sweep: Project-app Runtime Audit (Superseded For UI Route Proof)
 
 Evidence handoff: `docs/QA_EVIDENCE_20260429_PROJECT_APP_RUNTIME.md`
 
@@ -620,7 +960,7 @@ Build/test verification:
 - `npm.cmd --prefix webapp install` passed because frontend dependencies were missing in this checkout.
 - `npm.cmd --prefix webapp run build:dev` passed.
 - `dotnet test --no-restore --configuration Release` exited 0, but there are no backend test projects in this repo.
-- `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` passed, but the captured screenshots are blank dark pages. Treat this as an inadequate smoke test, not proof the UI is visibly correct.
+- `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` passed, but this route proof is superseded because later port inspection showed the Playwright config targets old repo ports `7210/7211`. Treat it as invalid for Project-app UI route proof.
 
 | ID | Verdict | Evidence |
 |----|---------|----------|
@@ -814,5 +1154,8 @@ These completed demo gates were manually verified by Joseph and must not be re-a
 - P0-019: Exact boss demo AI prompt pack passes.
 
 Only reopen these if Joseph explicitly asks, the AI/provider/tool code changes, or a fresh demo prompt fails.
+
+
+
 
 

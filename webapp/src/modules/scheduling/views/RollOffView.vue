@@ -106,10 +106,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
 
-const apiStore = useApiStore();
 const toast = useToast();
+const { getEndingSoon, getSuggestedMatches, listJobs, createAssignment } = useSchedulingService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -130,11 +132,6 @@ const enriched = computed(() => endingSoon.value);
 function nextMatch(craftCode: string | null | undefined) {
     if (!craftCode) return null;
     return suggestedMatches.value.find(m => m.craftCode === craftCode) ?? null;
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function daysLeft(end: string | null | undefined) {
@@ -186,7 +183,7 @@ async function saveAssign() {
             shift: assignForm.value.shift,
             status: 'Planned',
         };
-        await apiStore.api.post('/api/v1/scheduling/assignments', payload);
+        await createAssignment(payload);
         assignVisible.value = false;
         toast.add({ severity: 'success', summary: 'Assignment Created', life: 2500 });
         await load();
@@ -201,14 +198,14 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [endResp, matchResp, jobsResp] = await Promise.all([
-            apiStore.api.get(`/api/v1/scheduling/ending-soon?days=${days.value}`),
-            apiStore.api.get('/api/v1/scheduling/suggested-matches'),
-            apiStore.api.get('/api/v1/scheduling/jobs'),
+        const [endData, matchData, jobsData] = await Promise.all([
+            getEndingSoon(days.value),
+            getSuggestedMatches(),
+            listJobs(),
         ]);
-        endingSoon.value = endResp.data;
-        suggestedMatches.value = matchResp.data;
-        jobs.value = jobsResp.data;
+        endingSoon.value = endData;
+        suggestedMatches.value = matchData;
+        jobs.value = jobsData;
     } catch {
         error.value = true;
     } finally {

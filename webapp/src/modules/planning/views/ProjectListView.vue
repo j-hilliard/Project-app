@@ -84,11 +84,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { projectStatusSeverity as statusSeverity } from '@/ui';
 
 const router = useRouter();
-
-const apiStore = useApiStore();
+const { listProjects } = usePlanningService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -121,31 +123,11 @@ const filtered = computed(() => {
     return list;
 });
 
-function statusSeverity(status: string): string {
-    switch (status) {
-        case 'Active': return 'success';
-        case 'Monitoring': return 'info';
-        case 'Planning': return 'secondary';
-        case 'Initiating': return 'secondary';
-        case 'Closing': return 'warn';
-        case 'OnHold': return 'warn';
-        case 'Closed': return 'contrast';
-        case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/projects');
-        projects.value = data;
+        projects.value = await listProjects();
     } catch {
         error.value = true;
     } finally {

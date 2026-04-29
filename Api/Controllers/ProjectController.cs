@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Common;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Projects;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models.Planning;
 
@@ -70,23 +72,23 @@ public class ProjectController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Project project, CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] CreateProjectRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
         // Gate 1: Estimate must be Awarded
         var estimate = await db.Estimates
-            .FirstOrDefaultAsync(e => e.EstimateId == project.EstimateId && e.CompanyCode == CompanyCode, ct);
+            .FirstOrDefaultAsync(e => e.EstimateId == req.EstimateId && e.CompanyCode == CompanyCode, ct);
         if (estimate == null)
             return UnprocessableEntity(new { code = "EstimateNotFound", message = "Estimate not found." });
         if (estimate.Status != "Awarded")
             return UnprocessableEntity(new { code = "EstimateNotAwarded", message = "Estimate must be Awarded before creating a Project." });
 
         // Gate 2: CommercialAuthorization must be Active
-        if (project.CommercialAuthorizationId.HasValue)
+        if (req.CommercialAuthorizationId.HasValue)
         {
             var ca = await db.CommercialAuthorizations
-                .FirstOrDefaultAsync(ca => ca.CommercialAuthorizationId == project.CommercialAuthorizationId
+                .FirstOrDefaultAsync(ca => ca.CommercialAuthorizationId == req.CommercialAuthorizationId
                                         && ca.CompanyCode == CompanyCode, ct);
             if (ca == null)
                 return UnprocessableEntity(new { code = "CommAuthNotFound", message = "CommercialAuthorization not found." });
@@ -94,36 +96,51 @@ public class ProjectController : ControllerBase
                 return UnprocessableEntity(new { code = "CommAuthNotActive", message = "CommercialAuthorization must be Active to create a Project." });
         }
 
-        project.CompanyCode = CompanyCode;
-        project.CreatedBy = Username;
-        project.CreatedAt = DateTimeOffset.UtcNow;
-        project.UpdatedAt = DateTimeOffset.UtcNow;
+        var project = new Project
+        {
+            EstimateId = req.EstimateId,
+            CommercialAuthorizationId = req.CommercialAuthorizationId,
+            ProjectNumber = req.ProjectNumber,
+            Name = req.Name,
+            Client = req.Client,
+            ClientCode = req.ClientCode,
+            Site = req.Site,
+            City = req.City,
+            State = req.State,
+            JobLetter = req.JobLetter,
+            PlannedStart = req.PlannedStart,
+            PlannedEnd = req.PlannedEnd,
+            CompanyCode = CompanyCode,
+            CreatedBy = Username,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
         db.Projects.Add(project);
         await db.SaveChangesAsync(ct);
         return CreatedAtAction(nameof(Get), new { id = project.ProjectId }, project);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Project update, CancellationToken ct)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var project = await db.Projects
             .FirstOrDefaultAsync(p => p.ProjectId == id && p.CompanyCode == CompanyCode, ct);
         if (project == null) return NotFound();
 
-        project.Name = update.Name;
-        project.Client = update.Client;
-        project.ClientCode = update.ClientCode;
-        project.Site = update.Site;
-        project.City = update.City;
-        project.State = update.State;
-        project.JobLetter = update.JobLetter;
-        project.PlannedStart = update.PlannedStart;
-        project.PlannedEnd = update.PlannedEnd;
-        project.ForecastEnd = update.ForecastEnd;
-        project.AtRiskThresholdDays = update.AtRiskThresholdDays;
-        project.OwnerUserId = update.OwnerUserId;
-        project.LessonsLearnedNotes = update.LessonsLearnedNotes;
+        project.Name = req.Name;
+        project.Client = req.Client;
+        project.ClientCode = req.ClientCode;
+        project.Site = req.Site;
+        project.City = req.City;
+        project.State = req.State;
+        project.JobLetter = req.JobLetter;
+        project.PlannedStart = req.PlannedStart;
+        project.PlannedEnd = req.PlannedEnd;
+        project.ForecastEnd = req.ForecastEnd;
+        project.AtRiskThresholdDays = req.AtRiskThresholdDays;
+        project.OwnerUserId = req.OwnerUserId;
+        project.LessonsLearnedNotes = req.LessonsLearnedNotes;
         project.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return Ok(project);

@@ -142,16 +142,18 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue';
-import { useApiStore } from '@/stores/apiStore';
 import { useRouter } from 'vue-router';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
 
 const props = defineProps<{
     craft: any;
     suggestions: any[];
 }>();
 
-const apiStore = useApiStore();
 const router = useRouter();
+const { getCraftDetail, getCraftTrend, getEndingSoon } = useSchedulingService();
+const { fmtDateLong: fmtDate } = useFormatters();
 
 // ── Computed from craft prop ─────────────────────────────────────────────────
 
@@ -181,9 +183,7 @@ async function loadBlocked() {
     if (!props.craft.craftId && !props.craft.craftCode) return;
     blockedLoading.value = true;
     try {
-        const { data } = await apiStore.api.get(
-            `/api/v1/scheduling/coverage/craft/${props.craft.craftCode}/detail`
-        );
+        const data = await getCraftDetail(props.craft.craftCode);
         blocked.value = data.blockedPersonnel ?? [];
     } catch {
         blocked.value = [];
@@ -198,7 +198,7 @@ const endingSoon = ref<any[]>([]);
 
 async function loadEndingSoon() {
     try {
-        const { data } = await apiStore.api.get('/api/v1/scheduling/ending-soon');
+        const data = await getEndingSoon();
         endingSoon.value = (data as any[]).filter(
             (r: any) => r.craftCode === props.craft.craftCode
         );
@@ -230,10 +230,7 @@ function setTrendRange(days: number) {
 async function buildTrend() {
     trendLoading.value = true;
     try {
-        const { data } = await apiStore.api.get(
-            `/api/v1/scheduling/coverage/craft/${props.craft.craftCode}/trend`,
-            { params: { days: trendDays.value, includeForecast: includeForecast.value } }
-        );
+        const data = await getCraftTrend(props.craft.craftCode, trendDays.value, includeForecast.value);
         trendChartData.value = buildChartData(data.dates, data.demand, data.assigned, data.gap);
     } catch {
         // Backend endpoint not yet deployed — simulate plausible trend data for demo
@@ -343,11 +340,6 @@ const trendChartOptions = {
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-}
 
 function formatBlockReason(reason: string) {
     const map: Record<string, string> = {

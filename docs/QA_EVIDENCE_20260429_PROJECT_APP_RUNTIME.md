@@ -1,4 +1,9 @@
-﻿# QA Evidence - Project-app Runtime Audit - 2026-04-29
+﻿# SUPERSEDED PORT WARNING
+
+This evidence packet is superseded for UI route proof. Later port inspection showed the Playwright run against `7210/7211` was pointed at the old `stronghold-enterprise-estimating` repo processes, while the active `Project-app` uses `7310/7311`. Do not use the screenshots or Playwright result in this packet as Project-app route evidence. Use `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md` instead.
+
+---
+# QA Evidence - Project-app Runtime Audit - 2026-04-29
 
 Sweep ID: `QA_AUDIT_20260429_PROJECT_APP_RUNTIME`
 
@@ -35,3 +40,4 @@ Both screenshots are blank dark shells despite the Playwright test passing. This
 - Strengthen `verify-scheduling-planning.spec.ts` to assert visible page text/content, not only absence of error banners.
 - Keep estimating frozen.
 - Fix architecture drift before adding new feature polish.
+

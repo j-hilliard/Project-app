@@ -150,10 +150,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { fcoStatusSeverity as statusSeverity } from '@/ui';
 
-const apiStore = useApiStore();
 const toast = useToast();
+const { listFcos, createFco, updateFco, generateFcoDocument } = usePlanningService();
+const { fmtDate, fmtCurrencyZero: fmtCurrency } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -181,22 +184,6 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed */ }
 
-function statusSeverity(s: string) {
-    if (s === 'Approved') return 'success';
-    if (s === 'Submitted') return 'warning';
-    if (s === 'Rejected') return 'danger';
-    return 'secondary';
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function fmtCurrency(v: number) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-}
-
 const formVisible = ref(false);
 const form = ref({
     fcoNumber: '', title: '', scopeDescription: '', reason: '',
@@ -216,7 +203,7 @@ async function saveFco() {
     }
     saving.value = true;
     try {
-        await apiStore.api.post('/api/v1/planning/fco', { ...form.value, status: 'Draft', date: new Date() });
+        await createFco({ ...form.value, status: 'Draft', date: new Date() });
         formVisible.value = false;
         toast.add({ severity: 'success', summary: 'FCO Created', life: 2000 });
         await load();
@@ -237,10 +224,10 @@ function openDetail(fco: any) {
 
 async function updateFcoStatus(fco: any, status: string) {
     try {
-        const { data } = await apiStore.api.put(`/api/v1/planning/fco/${fco.fcoDocumentId}`, { ...fco, status });
+        const updated = await updateFco(fco.fcoDocumentId, { ...fco, status });
         const idx = fcos.value.findIndex(f => f.fcoDocumentId === fco.fcoDocumentId);
-        if (idx >= 0) fcos.value[idx] = data;
-        if (detailFco.value?.fcoDocumentId === fco.fcoDocumentId) detailFco.value = data;
+        if (idx >= 0) fcos.value[idx] = updated;
+        if (detailFco.value?.fcoDocumentId === fco.fcoDocumentId) detailFco.value = updated;
         toast.add({ severity: 'success', summary: `FCO ${status}`, life: 2000 });
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Could not update FCO.', life: 3000 });
@@ -250,8 +237,7 @@ async function updateFcoStatus(fco: any, status: string) {
 async function generateDoc(fco: any) {
     if (!fco) return;
     try {
-        const { data } = await apiStore.api.post(`/api/v1/planning/fco/${fco.fcoDocumentId}/generate-document`);
-        const blob = new Blob([data], { type: 'text/html' });
+        const blob = await generateFcoDocument(fco.fcoDocumentId);
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 10000);
@@ -264,8 +250,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/planning/fco');
-        fcos.value = data;
+        fcos.value = await listFcos();
     } catch {
         error.value = true;
     } finally {

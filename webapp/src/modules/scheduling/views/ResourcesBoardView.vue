@@ -154,11 +154,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
 
-const apiStore = useApiStore();
 const toast = useToast();
 const confirm = useConfirm();
+const { listResources, createResource, updateResource, deleteResource,
+        listCertifications, createCertification, deleteCertification } = useSchedulingService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -193,11 +196,6 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed */ }
 
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 // Form
 const formVisible = ref(false);
 const editMode = ref(false);
@@ -226,10 +224,10 @@ async function saveResource() {
     saving.value = true;
     try {
         if (editMode.value && editId.value) {
-            await apiStore.api.put(`/api/v1/scheduling/resources/${editId.value}`, form.value);
+            await updateResource(editId.value, form.value);
             toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
         } else {
-            await apiStore.api.post('/api/v1/scheduling/resources', form.value);
+            await createResource(form.value);
             toast.add({ severity: 'success', summary: 'Resource Created', life: 2000 });
         }
         formVisible.value = false;
@@ -249,7 +247,7 @@ function confirmDelete(r: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.delete(`/api/v1/scheduling/resources/${r.resourceId}`);
+                await deleteResource(r.resourceId);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -269,8 +267,7 @@ async function openDetail(event: any) {
     detailResource.value = r;
     detailVisible.value = true;
     try {
-        const { data } = await apiStore.api.get(`/api/v1/scheduling/resources/${r.resourceId}/certifications`);
-        detailCerts.value = data;
+        detailCerts.value = await listCertifications(r.resourceId);
     } catch {
         detailCerts.value = [];
     }
@@ -294,10 +291,9 @@ async function saveCert() {
             type: certForm.value.type,
             expirationDate: certForm.value.expirationDate,
         };
-        await apiStore.api.post('/api/v1/scheduling/certifications', payload);
+        await createCertification(payload);
         certVisible.value = false;
-        const { data } = await apiStore.api.get(`/api/v1/scheduling/resources/${detailResource.value.resourceId}/certifications`);
-        detailCerts.value = data;
+        detailCerts.value = await listCertifications(detailResource.value.resourceId);
         toast.add({ severity: 'success', summary: 'Certification Added', life: 2000 });
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Could not add certification.', life: 3000 });
@@ -308,7 +304,7 @@ async function saveCert() {
 
 async function deleteCert(cert: any) {
     try {
-        await apiStore.api.delete(`/api/v1/scheduling/certifications/${cert.certId}`);
+        await deleteCertification(cert.certId);
         detailCerts.value = detailCerts.value.filter(c => c.certId !== cert.certId);
         toast.add({ severity: 'success', summary: 'Removed', life: 2000 });
     } catch {
@@ -320,8 +316,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/scheduling/resources');
-        resources.value = data;
+        resources.value = await listResources();
     } catch {
         error.value = true;
     } finally {

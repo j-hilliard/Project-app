@@ -124,37 +124,26 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
+import { sourceTagSeverity } from '@/ui';
 
 const router = useRouter();
-const apiStore = useApiStore();
+const { getDashboard, listJobs } = useSchedulingService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
 const kpis = ref<any>(null);
 const recentJobs = ref<any[]>([]);
 
-function sourceTagSeverity(type: string) {
-    if (type === 'Estimate') return 'success';
-    if (type === 'StaffingPlan') return 'warning';
-    return 'info';
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [dashResp, jobsResp] = await Promise.all([
-            apiStore.api.get('/api/v1/scheduling/dashboard'),
-            apiStore.api.get('/api/v1/scheduling/jobs'),
-        ]);
-        kpis.value = dashResp.data;
-        recentJobs.value = (jobsResp.data as any[]).slice(0, 8);
+        const [kpiData, jobData] = await Promise.all([getDashboard(), listJobs()]);
+        kpis.value = kpiData;
+        recentJobs.value = (jobData as any[]).slice(0, 8);
     } catch {
         error.value = true;
     } finally {

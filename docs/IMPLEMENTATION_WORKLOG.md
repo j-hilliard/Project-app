@@ -3,6 +3,81 @@
 
 ---
 
+## 2026-04-29 — Batch 2: Frontend Foundation / Design System
+
+**Branch:** `refactor/pm-scheduling-foundation`
+
+**What changed:**
+
+### Design system — `webapp/src/ui/`
+- `webapp/src/ui/composables/useFormatters.ts` — `fmtDate`, `fmtDateLong`, `fmtCurrency`, `fmtCurrencyZero`
+- `webapp/src/ui/utils/severity.ts` — 11 domain-specific severity functions + generic fallback:
+  `projectStatusSeverity`, `workOrderStatusSeverity`, `planStatusSeverity`, `workPackageStatusSeverity`,
+  `fcoStatusSeverity`, `assignmentStatusSeverity`, `phaseStatusSeverity`, `taskStatusSeverity`,
+  `stepStatusSeverity`, `milestoneStatusSeverity`, `sourceTagSeverity`, `statusSeverity`
+- `webapp/src/ui/index.ts` — barrel re-export for all ui utilities
+
+### Module service layers
+- `webapp/src/modules/planning/services/usePlanningService.ts` — wraps all 22 planning API calls
+  (projects, work orders, step-out plans, work packages, FCOs)
+- `webapp/src/modules/scheduling/services/useSchedulingService.ts` — wraps all 17 scheduling API calls
+  (dashboard, jobs, resources, certifications, assignments, coverage, roll-off)
+
+**Build result:** `npm run build` — ✓ built in 4.63s, 0 errors
+**Architecture checks:** `run-all-checks.sh` — PASSED (ARCH-DS-001 now PASS; frontend ARCH-FE violations remain in warn mode until Batch 3-4)
+
+---
+
+## 2026-04-29 — Batch 1: Backend Foundation Cleanup + Guardrails
+
+**Branch:** `refactor/pm-scheduling-foundation` (off `feat/pm-module` @ `03c6d8a`)
+
+**What changed:**
+
+### AppDbContext configuration split
+- `Data/AppDbContext.cs` — `OnModelCreating` replaced with `ApplyConfigurationsFromAssembly`
+- 55 `IEntityTypeConfiguration<T>` classes created across 4 subdirectories:
+  - `Data/Configurations/Core/` — 9 entity configs (User, Company, Role, etc.)
+  - `Data/Configurations/Estimating/` — 21 entity configs (Estimate, RateBook, CostBook, etc.)
+  - `Data/Configurations/Planning/` — 20 entity configs (Project, WorkOrder, FcoDocument, etc.)
+  - `Data/Configurations/Scheduling/` — 5 entity configs (Resource, Assignment, etc.)
+- No migration generated (structural change only; no schema diff)
+
+### Business logic extraction
+- `Api/Services/Planning/FcoDocumentService.cs` — FCO HTML document generation extracted from PlanningController
+- `Api/Services/WorkOrders/WorkOrderFinancialService.cs` — Financial calculation extracted from WorkOrderController
+
+### API contracts
+- `Api/Contracts/Common/StatusUpdateRequest.cs` — moved out of CommercialAuthorizationController
+- `Api/Contracts/Projects/` — `CreateProjectRequest`, `UpdateProjectRequest`
+- `Api/Contracts/WorkOrders/` — `CreateWorkOrderRequest`, `UpdateWorkOrderRequest`
+- `Api/Contracts/Planning/` — 7 records (StepOutPlan, StepOutStep, WorkPackage, FcoDocument)
+- `Api/Contracts/Scheduling/` — 6 records (Resource, Assignment, Certification, AvailabilityBlock)
+
+### Controller rewrites (contract-based [FromBody])
+- `ProjectController.cs` — Create/Update use contract records
+- `WorkOrderController.cs` — Create/Update use contract records; GetFinancials delegates to service
+- `PlanningController.cs` — 7 endpoints use contract records; GenerateFcoDocument delegates to service
+- `SchedulingController.cs` — 6 endpoints use contract records
+- `CommercialAuthorizationController.cs` — StatusUpdateRequest moved to Contracts.Common
+
+### Guardrails + automation
+- `docs/ARCHITECTURE_GUARDRAILS.md` — canonical rules document (9 backend + 6 frontend + 2 design system rules)
+- `tools/architecture-checks/check-backend.sh` — ARCH-BE-001 through ARCH-BE-009 (hard-fail)
+- `tools/architecture-checks/check-frontend.sh` — ARCH-FE-001 through ARCH-FE-006 + DS-001 (warn mode until Batch 3-4)
+- `tools/architecture-checks/run-all-checks.sh` — master runner; exits 0 ✓
+
+**Build result:** `dotnet build` — 0 errors (1 pre-existing CS8604 warning in Program.cs)
+**Migration check:** `dotnet ef migrations list` — no pending migrations
+**Architecture checks:** `run-all-checks.sh` — PASSED (17 backend PASSes, 1 DevController WARN expected)
+
+**Deferred to future batch:**
+- DevController seeder extraction (PmLifecycleSeedService, SchedulingSeedService) — ARCH-BE-009 currently warn-only
+- CommercialAuthorizationController full contract refactor
+- Frontend refactor (Batches 2-4)
+
+---
+
 ## 2026-04-28 — Phase 0: Analysis + Docs
 
 **What changed:** Created platform expansion documentation.
@@ -189,3 +264,58 @@
 **Remaining allowed references:** `ProjectPlan`, `TaskActual`, and `dhtmlx-gantt` remain only in archived/superseded/conflict context, not as active implementation guidance.
 
 **Next step:** Claude can implement from `docs/PROJECT_HANDOFF_INDEX.md`; Codex should audit implementation against the canonical stack.
+
+---
+
+## 2026-04-29 — Codex QA Sweep: PM + Scheduling Full Audit
+
+**What changed:** Codex performed a QA-only PM/Scheduling audit in manual polling mode and created a Project-app evidence packet.
+
+**Why:** Joseph assigned Codex as QA/audit/regression authority and required a full density, functionality, logic, numbering, drill-down, and Playwright proof pass across Planning/PM and Scheduling.
+
+**Files touched by Codex QA:**
+- `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`
+- `docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/**`
+- `docs/LIVE_QA_TODO.md`
+- `docs/QA_REGRESSION_CHECKLIST.md`
+- `docs/TEST_RUN_LOG.md`
+
+**Product code changed:** No.
+
+**Commands / tools run:**
+- canonical docs and QA docs read
+- port/process inspection for `7310/7311/7210/7211`
+- QA-only Playwright script `webapp/test-results/qa/QA_AUDIT_20260429_PM_SCHED_FULL/pm-scheduling-audit.mjs`
+- read-only subagent audits: UI Explorer, Logic Auditor, Regression Guard
+
+**Test results:** FAIL WITH FINDINGS. 15 PM/Scheduling routes/screens checked; 14 route-level findings plus backend logic defects were recorded in `docs/LIVE_QA_TODO.md`.
+
+**Regressions found:** Existing Playwright config points at old repo ports `7210/7211`; PM/Scheduling density is inconsistent; jobs board lacks Forecast/Released demand-state proof; backend gates for WorkOrder/FCO/assignment release are too soft.
+
+**Next step:** Waiting for Claude fixes. Codex must rerun the same Project-app `7310/7311` audit after Claude reports changes and Joseph approves closure.
+
+---
+
+## 2026-04-29 - Codex QA Guardrail Update: PM/Scheduling Foundation Cleanup
+
+**What changed:** Codex updated the QA/todo/regression docs so future PM/Scheduling cleanup batches are audited for architecture and UI-system drift, not only route clicks.
+
+**Why:** Joseph paused feature work and required permanent guardrails for the `refactor/pm-scheduling-foundation` cleanup: service-layer API access, shared UI primitives, thin controllers, DTO/contracts, split EF configuration, seeding/bootstrap ownership, architecture checks, and tester enforcement.
+
+**Files touched by Codex QA:**
+- `docs/LIVE_QA_TODO.md`
+- `docs/QA_REGRESSION_CHECKLIST.md`
+- `docs/TEST_RUN_LOG.md`
+- `docs/IMPLEMENTATION_WORKLOG.md`
+
+**Product code changed:** No.
+
+**Commands / tools run:**
+- Read current QA docs and existing PM-SCHED findings.
+- Updated QA docs only.
+
+**Test results:** Docs-only QA operating update. No app build or browser run was required for this doc change.
+
+**Regressions added for enforcement:** `ARCH-001` through `ARCH-008` in `LIVE_QA_TODO.md`; linked existing `QA-ARCH-001` through `QA-ARCH-008` and added unique `QA-ARCH-009` through `QA-ARCH-011`, `QA-UI-013`, `QA-UI-014`, and backend architecture checks in `QA_REGRESSION_CHECKLIST.md`.
+
+**Next step:** When Claude creates `refactor/pm-scheduling-foundation`, Codex must audit each batch against the new architecture lane and fail the branch for forbidden PM/Scheduling view API calls, duplicate helpers, raw EF request bodies, inline DbContext config, UI-system bypass, or missing architecture-check scripts.

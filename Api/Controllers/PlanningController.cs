@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Planning;
+using Stronghold.EnterpriseEstimating.Api.Services.Planning;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models.Planning;
 
@@ -35,12 +37,23 @@ public class PlanningController : ControllerBase
     }
 
     [HttpPost("step-out-plans")]
-    public async Task<IActionResult> CreatePlan([FromBody] StepOutPlan plan, CancellationToken ct)
+    public async Task<IActionResult> CreatePlan([FromBody] CreateStepOutPlanRequest req, CancellationToken ct)
     {
-        plan.CompanyCode = CompanyCode;
-        plan.CreatedBy = Username;
-        plan.CreatedAt = DateTimeOffset.UtcNow;
-        plan.UpdatedAt = DateTimeOffset.UtcNow;
+        var plan = new StepOutPlan
+        {
+            Name = req.Name,
+            Client = req.Client,
+            Site = req.Site,
+            PlannedStart = req.PlannedStart,
+            PlannedEnd = req.PlannedEnd,
+            Notes = req.Notes,
+            WorkOrderId = req.WorkOrderId,
+            Status = req.Status,
+            CompanyCode = CompanyCode,
+            CreatedBy = Username,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.StepOutPlans.Add(plan);
         await db.SaveChangesAsync(ct);
@@ -62,18 +75,18 @@ public class PlanningController : ControllerBase
     }
 
     [HttpPut("step-out-plans/{id:int}")]
-    public async Task<IActionResult> UpdatePlan(int id, [FromBody] StepOutPlan update, CancellationToken ct)
+    public async Task<IActionResult> UpdatePlan(int id, [FromBody] UpdateStepOutPlanRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var plan = await db.StepOutPlans.FirstOrDefaultAsync(p => p.PlanId == id && p.CompanyCode == CompanyCode, ct);
         if (plan == null) return NotFound();
-        plan.Name = update.Name;
-        plan.Status = update.Status;
-        plan.Client = update.Client;
-        plan.Site = update.Site;
-        plan.PlannedStart = update.PlannedStart;
-        plan.PlannedEnd = update.PlannedEnd;
-        plan.Notes = update.Notes;
+        plan.Name = req.Name;
+        plan.Status = req.Status;
+        plan.Client = req.Client;
+        plan.Site = req.Site;
+        plan.PlannedStart = req.PlannedStart;
+        plan.PlannedEnd = req.PlannedEnd;
+        plan.Notes = req.Notes;
         plan.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return Ok(plan);
@@ -92,38 +105,56 @@ public class PlanningController : ControllerBase
 
     // ── Steps ─────────────────────────────────────────────────────────────
     [HttpPost("step-out-plans/{planId:int}/steps")]
-    public async Task<IActionResult> AddStep(int planId, [FromBody] StepOutStep step, CancellationToken ct)
+    public async Task<IActionResult> AddStep(int planId, [FromBody] CreateStepOutStepRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var plan = await db.StepOutPlans.FirstOrDefaultAsync(p => p.PlanId == planId && p.CompanyCode == CompanyCode, ct);
         if (plan == null) return NotFound();
-        step.PlanId = planId;
+        var step = new StepOutStep
+        {
+            PlanId = planId,
+            StepCode = req.StepCode,
+            SortOrder = req.SortOrder,
+            Title = req.Title,
+            Description = req.Description,
+            CraftCode = req.CraftCode,
+            RequiredPeople = req.RequiredPeople,
+            DurationMinutes = req.DurationMinutes,
+            IsParallel = req.IsParallel,
+            PermitRequired = req.PermitRequired,
+            MaterialToolRequired = req.MaterialToolRequired,
+            Area = req.Area,
+            Status = req.Status,
+            PlannedStart = req.PlannedStart,
+            PlannedEnd = req.PlannedEnd,
+            Notes = req.Notes,
+        };
         db.StepOutSteps.Add(step);
         await db.SaveChangesAsync(ct);
         return Ok(step);
     }
 
     [HttpPut("step-out-plans/{planId:int}/steps/{stepId:int}")]
-    public async Task<IActionResult> UpdateStep(int planId, int stepId, [FromBody] StepOutStep update, CancellationToken ct)
+    public async Task<IActionResult> UpdateStep(int planId, int stepId, [FromBody] UpdateStepOutStepRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var step = await db.StepOutSteps.FirstOrDefaultAsync(s => s.StepId == stepId && s.PlanId == planId, ct);
         if (step == null) return NotFound();
-        step.StepCode = update.StepCode;
-        step.SortOrder = update.SortOrder;
-        step.Title = update.Title;
-        step.Description = update.Description;
-        step.DurationMinutes = update.DurationMinutes;
-        step.RequiredPeople = update.RequiredPeople;
-        step.CraftCode = update.CraftCode;
-        step.IsParallel = update.IsParallel;
-        step.PermitRequired = update.PermitRequired;
-        step.MaterialToolRequired = update.MaterialToolRequired;
-        step.Area = update.Area;
-        step.Status = update.Status;
-        step.PlannedStart = update.PlannedStart;
-        step.PlannedEnd = update.PlannedEnd;
-        step.Notes = update.Notes;
+        step.StepCode = req.StepCode;
+        step.SortOrder = req.SortOrder;
+        step.Title = req.Title;
+        step.Description = req.Description;
+        step.DurationMinutes = req.DurationMinutes;
+        step.RequiredPeople = req.RequiredPeople;
+        step.CraftCode = req.CraftCode;
+        step.IsParallel = req.IsParallel;
+        step.PermitRequired = req.PermitRequired;
+        step.MaterialToolRequired = req.MaterialToolRequired;
+        step.Area = req.Area;
+        step.Status = req.Status;
+        step.PlannedStart = req.PlannedStart;
+        step.PlannedEnd = req.PlannedEnd;
+        step.Notes = req.Notes;
         await db.SaveChangesAsync(ct);
         return Ok(step);
     }
@@ -194,7 +225,6 @@ public class PlanningController : ControllerBase
             .FirstOrDefaultAsync(w => w.PackageId == id && w.CompanyCode == CompanyCode, ct);
         if (wp == null) return NotFound();
 
-        // Resolve WO and Project nav info (labels only — no financial fields exposed)
         string? workOrderNumber = null, workOrderTitle = null, workOrderStatus = null;
         string? projectNumber = null, projectName = null;
         int? projectId = null;
@@ -252,26 +282,26 @@ public class PlanningController : ControllerBase
     }
 
     [HttpPut("work-packages/{id:int}")]
-    public async Task<IActionResult> UpdateWorkPackage(int id, [FromBody] WorkPackage update, CancellationToken ct)
+    public async Task<IActionResult> UpdateWorkPackage(int id, [FromBody] UpdateWorkPackageRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var wp = await db.WorkPackages.FirstOrDefaultAsync(w => w.PackageId == id && w.CompanyCode == CompanyCode, ct);
         if (wp == null) return NotFound();
-        wp.Title = update.Title;
-        wp.CraftCode = update.CraftCode;
-        wp.RequiredPeople = update.RequiredPeople;
-        wp.PlannedStart = update.PlannedStart;
-        wp.PlannedEnd = update.PlannedEnd;
-        wp.Status = update.Status;
-        wp.ReadyForScheduling = update.ReadyForScheduling;
-        wp.Area = update.Area;
-        wp.Location = update.Location;
-        wp.PermitRequired = update.PermitRequired;
-        wp.PermitNumber = update.PermitNumber;
-        wp.PermitStatus = update.PermitStatus;
-        wp.JsaRequired = update.JsaRequired;
-        wp.JsaStatus = update.JsaStatus;
-        wp.Notes = update.Notes;
+        wp.Title = req.Title;
+        wp.CraftCode = req.CraftCode;
+        wp.RequiredPeople = req.RequiredPeople;
+        wp.PlannedStart = req.PlannedStart;
+        wp.PlannedEnd = req.PlannedEnd;
+        wp.Status = req.Status;
+        wp.ReadyForScheduling = req.ReadyForScheduling;
+        wp.Area = req.Area;
+        wp.Location = req.Location;
+        wp.PermitRequired = req.PermitRequired;
+        wp.PermitNumber = req.PermitNumber;
+        wp.PermitStatus = req.PermitStatus;
+        wp.JsaRequired = req.JsaRequired;
+        wp.JsaStatus = req.JsaStatus;
+        wp.Notes = req.Notes;
         wp.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return Ok(wp);
@@ -288,12 +318,26 @@ public class PlanningController : ControllerBase
     }
 
     [HttpPost("fco")]
-    public async Task<IActionResult> CreateFco([FromBody] FcoDocument fco, CancellationToken ct)
+    public async Task<IActionResult> CreateFco([FromBody] CreateFcoDocumentRequest req, CancellationToken ct)
     {
-        fco.CompanyCode = CompanyCode;
-        fco.CreatedBy = Username;
-        fco.CreatedAt = DateTimeOffset.UtcNow;
-        fco.UpdatedAt = DateTimeOffset.UtcNow;
+        var fco = new FcoDocument
+        {
+            FcoNumber = req.FcoNumber,
+            Title = req.Title,
+            ScopeDescription = req.ScopeDescription,
+            Reason = req.Reason,
+            RequestedBy = req.RequestedBy,
+            PreparedBy = req.PreparedBy,
+            ScheduleImpactDays = req.ScheduleImpactDays,
+            UpdatedContractValue = req.UpdatedContractValue,
+            Date = req.Date ?? DateTime.UtcNow,
+            LinkedWorkOrderId = req.LinkedWorkOrderId,
+            Status = "Draft",
+            CompanyCode = CompanyCode,
+            CreatedBy = Username,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.FcoDocuments.Add(fco);
         await db.SaveChangesAsync(ct);
@@ -309,30 +353,30 @@ public class PlanningController : ControllerBase
     }
 
     [HttpPut("fco/{id:int}")]
-    public async Task<IActionResult> UpdateFco(int id, [FromBody] FcoDocument update, CancellationToken ct)
+    public async Task<IActionResult> UpdateFco(int id, [FromBody] UpdateFcoDocumentRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var fco = await db.FcoDocuments.FirstOrDefaultAsync(f => f.FcoDocumentId == id && f.CompanyCode == CompanyCode, ct);
         if (fco == null) return NotFound();
-        fco.Title = update.Title;
-        fco.ScopeDescription = update.ScopeDescription;
-        fco.Reason = update.Reason;
-        fco.ScheduleImpactDays = update.ScheduleImpactDays;
-        fco.RevisedCompletionDate = update.RevisedCompletionDate;
-        fco.LaborBreakdownJson = update.LaborBreakdownJson;
-        fco.MaterialBreakdownJson = update.MaterialBreakdownJson;
-        fco.EquipmentBreakdownJson = update.EquipmentBreakdownJson;
-        fco.MarkupPct = update.MarkupPct;
-        fco.TaxPct = update.TaxPct;
-        fco.TotalFcoAmount = update.TotalFcoAmount;
-        fco.UpdatedContractValue = update.UpdatedContractValue;
-        fco.Status = update.Status;
-        fco.ApprovalNotes = update.ApprovalNotes;
-        fco.ClientApprovalName = update.ClientApprovalName;
-        fco.ClientApprovalDate = update.ClientApprovalDate;
-        fco.ContractorApprovalName = update.ContractorApprovalName;
-        fco.ContractorApprovalDate = update.ContractorApprovalDate;
-        fco.RevisionHistory = update.RevisionHistory;
+        fco.Title = req.Title;
+        fco.ScopeDescription = req.ScopeDescription;
+        fco.Reason = req.Reason;
+        fco.ScheduleImpactDays = req.ScheduleImpactDays;
+        fco.RevisedCompletionDate = req.RevisedCompletionDate;
+        fco.LaborBreakdownJson = req.LaborBreakdownJson;
+        fco.MaterialBreakdownJson = req.MaterialBreakdownJson;
+        fco.EquipmentBreakdownJson = req.EquipmentBreakdownJson;
+        fco.MarkupPct = req.MarkupPct;
+        fco.TaxPct = req.TaxPct;
+        fco.TotalFcoAmount = req.TotalFcoAmount;
+        fco.UpdatedContractValue = req.UpdatedContractValue;
+        fco.Status = req.Status;
+        fco.ApprovalNotes = req.ApprovalNotes;
+        fco.ClientApprovalName = req.ClientApprovalName;
+        fco.ClientApprovalDate = req.ClientApprovalDate;
+        fco.ContractorApprovalName = req.ContractorApprovalName;
+        fco.ContractorApprovalDate = req.ContractorApprovalDate;
+        fco.RevisionHistory = req.RevisionHistory;
         fco.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return Ok(fco);
@@ -345,107 +389,7 @@ public class PlanningController : ControllerBase
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var fco = await db.FcoDocuments.FirstOrDefaultAsync(f => f.FcoDocumentId == id && f.CompanyCode == CompanyCode, ct);
         if (fco == null) return NotFound();
-
-        var html = BuildFcoHtml(fco);
+        var html = FcoDocumentService.BuildHtml(fco);
         return Content(html, "text/html");
-    }
-
-    private static string BuildFcoHtml(FcoDocument fco)
-    {
-        var total = fco.TotalFcoAmount.ToString("C");
-        var updatedContract = fco.UpdatedContractValue.HasValue ? fco.UpdatedContractValue.Value.ToString("C") : "&#8212;";
-        var status = fco.Status.ToUpperInvariant();
-        var taxDisplay = fco.TaxPct.HasValue ? fco.TaxPct.Value.ToString("P1") : "&#8212;";
-        var revCompletion = fco.RevisedCompletionDate?.ToString("MM/dd/yyyy") ?? "&#8212;";
-        var estRef = fco.LinkedEstimateId?.ToString() ?? "&#8212;";
-        var clientApprovalDate = fco.ClientApprovalDate?.ToString("MM/dd/yyyy") ?? "________________________________";
-        var contractorApprovalDate = fco.ContractorApprovalDate?.ToString("MM/dd/yyyy") ?? "________________________________";
-        var dateDisplay = fco.Date.ToString("MMMM d, yyyy");
-        var generatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
-        var revisionSection = string.IsNullOrEmpty(fco.RevisionHistory) ? "" :
-            $"<div class=\"section-title\">Revision History</div><table><tr><td>{fco.RevisionHistory}</td></tr></table>";
-
-        return $$"""
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-            <meta charset="UTF-8"/>
-            <style>
-              body { font-family: Arial, sans-serif; font-size: 11pt; margin: 40px; color: #111; }
-              h1 { font-size: 18pt; text-align: center; margin: 0 0 4px; }
-              .subtitle { text-align: center; color: #555; margin: 0 0 24px; font-size: 10pt; }
-              .status-badge { display: inline-block; padding: 3px 12px; border-radius: 4px;
-                font-size: 9pt; font-weight: bold; letter-spacing: .05em;
-                background: #fef9c3; color: #854d0e; border: 1px solid #fcd34d; }
-              table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-              td, th { border: 1px solid #ccc; padding: 6px 10px; font-size: 10pt; vertical-align: top; }
-              th { background: #f3f4f6; font-weight: 600; width: 30%; }
-              .section-title { background: #1e3a5f; color: #fff; font-weight: bold;
-                font-size: 10pt; padding: 5px 10px; letter-spacing: .06em; text-transform: uppercase; }
-              .sig-box { border: 1px solid #ccc; height: 60px; margin-top: 4px; }
-              .footer { margin-top: 32px; font-size: 9pt; color: #777; text-align: center; border-top: 1px solid #ccc; padding-top: 8px; }
-            </style>
-            </head>
-            <body>
-            <h1>FIELD CHANGE ORDER</h1>
-            <div class="subtitle">FCO #{{fco.FcoNumber}} &nbsp;|&nbsp; {{dateDisplay}} &nbsp;|&nbsp; <span class="status-badge">{{status}}</span></div>
-
-            <div class="section-title">Project Information</div>
-            <table>
-              <tr><th>Project Name</th><td>{{fco.ProjectName ?? "&#8212;"}}</td><th>Project Address</th><td>{{fco.ProjectAddress ?? "&#8212;"}}</td></tr>
-              <tr><th>Original Contract/Estimate</th><td>#{{estRef}}</td><th>FCO Number</th><td>{{fco.FcoNumber}}</td></tr>
-            </table>
-
-            <div class="section-title">Parties</div>
-            <table>
-              <tr><th>Client</th><td>{{fco.ClientName ?? "&#8212;"}}</td><th>Client Contact</th><td>{{fco.ClientContact ?? "&#8212;"}}</td></tr>
-              <tr><th>Contractor</th><td>{{fco.ContractorName ?? "&#8212;"}}</td><th>Contractor Contact</th><td>{{fco.ContractorContact ?? "&#8212;"}}</td></tr>
-              <tr><th>Requested By</th><td>{{fco.RequestedBy ?? "&#8212;"}}</td><th>Prepared By</th><td>{{fco.PreparedBy ?? "&#8212;"}}</td></tr>
-            </table>
-
-            <div class="section-title">Scope of Change</div>
-            <table>
-              <tr><th>Description</th><td colspan="3">{{fco.ScopeDescription ?? "&#8212;"}}</td></tr>
-              <tr><th>Reason / Basis</th><td colspan="3">{{fco.Reason ?? "&#8212;"}}</td></tr>
-              <tr><th>Schedule Impact</th><td>{{fco.ScheduleImpactDays}} days added</td><th>Revised Completion</th><td>{{revCompletion}}</td></tr>
-            </table>
-
-            <div class="section-title">Cost Summary</div>
-            <table>
-              <tr><th>Labor Breakdown</th><td>{{fco.LaborBreakdownJson ?? "See attached"}}</td></tr>
-              <tr><th>Material Breakdown</th><td>{{fco.MaterialBreakdownJson ?? "See attached"}}</td></tr>
-              <tr><th>Equipment Breakdown</th><td>{{fco.EquipmentBreakdownJson ?? "See attached"}}</td></tr>
-              <tr><th>Markup / Overhead / Profit</th><td>{{fco.MarkupPct:P1}}</td></tr>
-              <tr><th>Tax</th><td>{{taxDisplay}}</td></tr>
-              <tr><th>Total FCO Amount</th><td><strong>{{total}}</strong></td></tr>
-              <tr><th>Updated Contract / Estimate Value</th><td><strong>{{updatedContract}}</strong></td></tr>
-            </table>
-
-            <div class="section-title">Approvals</div>
-            <table>
-              <tr>
-                <td style="width:50%">
-                  <strong>Client Approval</strong><br/>
-                  Name: {{fco.ClientApprovalName ?? "________________________________"}}<br/>
-                  Date: {{clientApprovalDate}}<br/>
-                  <div class="sig-box"></div>
-                </td>
-                <td style="width:50%">
-                  <strong>Contractor Approval</strong><br/>
-                  Name: {{fco.ContractorApprovalName ?? "________________________________"}}<br/>
-                  Date: {{contractorApprovalDate}}<br/>
-                  <div class="sig-box"></div>
-                </td>
-              </tr>
-            </table>
-
-            {{revisionSection}}
-
-            <div class="footer">
-              Generated by Stronghold Platform &mdash; {{generatedAt}} UTC
-            </div>
-            </body>
-            </html>
-            """;
     }
 }

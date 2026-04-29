@@ -130,10 +130,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
+import { sourceTagSeverity, demandStatusSeverity as statusSeverity } from '@/ui';
 
-const apiStore = useApiStore();
 const toast = useToast();
+const { listJobs, listResources, createAssignment } = useSchedulingService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -165,24 +168,6 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed handles it */ }
 
-function sourceTagSeverity(type: string) {
-    if (type === 'Estimate') return 'success';
-    if (type === 'StaffingPlan') return 'warning';
-    return 'info';
-}
-
-function statusSeverity(s: string) {
-    const l = s?.toLowerCase();
-    if (l === 'awarded') return 'success';
-    if (l === 'pending' || l === 'approved') return 'warn';
-    return 'secondary';
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 const assignVisible = ref(false);
 const conflictVisible = ref(false);
 const assignJob = ref<any>(null);
@@ -213,12 +198,12 @@ async function saveAssign() {
             shift: assignForm.value.shift,
             status: 'Planned',
         };
-        const { data } = await apiStore.api.post('/api/v1/scheduling/assignments', payload);
+        const result = await createAssignment(payload);
         assignVisible.value = false;
         toast.add({ severity: 'success', summary: 'Assignment Created', life: 2500 });
         await load();
-        if (data.hasConflicts) {
-            conflicts.value = data.conflicts;
+        if (result.hasConflicts) {
+            conflicts.value = result.conflicts;
             conflictVisible.value = true;
         }
     } catch {
@@ -232,12 +217,9 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [jobsResp, resResp] = await Promise.all([
-            apiStore.api.get('/api/v1/scheduling/jobs'),
-            apiStore.api.get('/api/v1/scheduling/resources'),
-        ]);
-        jobs.value = jobsResp.data;
-        resources.value = resResp.data;
+        const [jobsData, resData] = await Promise.all([listJobs(), listResources()]);
+        jobs.value = jobsData;
+        resources.value = resData;
     } catch {
         error.value = true;
     } finally {

@@ -1,0 +1,845 @@
+{
+  "baseURL": "https://localhost:7310",
+  "generatedAt": "2026-04-29T15:21:46.737Z",
+  "routesTested": 15,
+  "findingsCount": 14,
+  "results": [
+    {
+      "route": "/portal",
+      "name": "Portal dashboard",
+      "type": "shell",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/portal.png",
+      "metrics": {
+        "url": "https://localhost:7310/portal",
+        "title": "Home - Stronghold Platform",
+        "h1": [
+          "Stronghold Platform"
+        ],
+        "bodyLength": 488,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSTRONGHOLD PLATFORM\nStronghold Platform\n\nWelcome back, there\n\nCSL\nEnterprise Estimating\n\nCreate and manage estimates, staffing plans, rate books, and cost analysis\n\nField Planning & PM\n\nProjects, work orders, and PM lifecycle management\n\nScheduling\n\nResource assignments, coverage tracking, and roll-off planning\n\nNo active alerts across all modules",
+        "errorEls": [],
+        "tableCount": 0,
+        "entGridCount": 0,
+        "clickableGridCount": 0,
+        "rowCount": 0,
+        "maxRowHeight": 0,
+        "tallRows": [],
+        "buttons": [
+          "Switch to light mode",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning",
+      "name": "Planning redirect",
+      "type": "redirect",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning.png",
+      "metrics": {
+        "url": "https://localhost:7310/projects",
+        "title": "Enterprise Estimating",
+        "h1": [],
+        "bodyLength": 0,
+        "bodySnippet": "",
+        "errorEls": [],
+        "tableCount": 0,
+        "entGridCount": 0,
+        "clickableGridCount": 0,
+        "rowCount": 0,
+        "maxRowHeight": 0,
+        "tallRows": [],
+        "buttons": [],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Critical",
+          "type": "Visual",
+          "message": "Page rendered blank or near-blank body text."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/projects",
+      "name": "Projects list",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-projects.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/projects",
+        "title": "Projects - Field Planning & PM",
+        "h1": [
+          "Projects"
+        ],
+        "bodyLength": 880,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nProjects\n\nExecution projects for this company. Each project traces to an awarded estimate.\n\nRefresh\nAll Statuses\n4 projects\nPROJECT #\n\t\nNAME\n\t\nCLIENT\n\t\nSTATUS\n\t\nPLANNED START\n\t\nPLANNED END\n\t\nFORECAST END\n\t\nWOS\n\nPRJ-DEMO-D\t\nValero Port Arthur Unit 8 Turnaround Piping\n\t\nValero Energy\n\t\nActive\n\tSep 1, 2026\tOct 15, 2026\t—\t\n1\n\nPRJ-DEMO-C\t\nBP Texas City Exchanger Bundle Pull & Repair\n\t\nBritish Petroleum\n\t\nClosed\n\tJan 15, 2025\tFeb 28, 2025\t—\t\n1\n\nPRJ-DEMO-B\t\nCheniere LNG Terminal Expansion Piping\n\t\nCheniere Energy\n\t\nPlanning\n\tAug 1, 2026\tSep 30, 2026\t—\t\n1\n\nPRJ-DEMO-A\t\nShell Deer Park Unit 4 Piping Rep",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 4,
+        "maxRowHeight": 46,
+        "tallRows": [],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/work-orders",
+      "name": "Work Orders list",
+      "type": "list",
+      "needsClickableRows": true,
+      "baseline": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-work-orders.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/work-orders",
+        "title": "Work Orders - Field Planning & PM",
+        "h1": [
+          "Work Orders"
+        ],
+        "bodyLength": 872,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nWork Orders\n\nReleased execution packages. Work orders gate all field execution and actuals.\n\nRefresh\nAll Statuses\n4 work orders\nWO #\n\t\nTITLE\n\t\nSTATUS\n\t\nAUTHORIZED $\n\t\nPLANNED START\n\t\nPLANNED END\n\t\nRELEASED\n\nWO-DEMO-D-001\t\nValero PA Unit 8 Turnaround — Main Scope\n\t\nReleased\n\t\n$620,000\n\tSep 1, 2026\tOct 15, 2026\tApr 29, 2026\nWO-DEMO-C-001\t\nExchanger Bundle Pull & Repair — Complete Scope\n\t\nClosed\n\t\n$823,000\n\tJan 15, 2025\tFeb 28, 2025\tJan 13, 2025\nWO-DEMO-B-001\t\nLNG Terminal Expansion — Main Piping Scope\n\t\nDraft\n\t\n—\n\tAug 1, 2026\tSep 30, 2026\t—\nWO-DEMO-A-001\t\nUnit 4 Piping Repair — Main Execution Sc",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 4,
+        "maxRowHeight": 46,
+        "tallRows": [],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": true,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/step-out-plans",
+      "name": "Step-Out Plans list",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-step-out-plans.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/step-out-plans",
+        "title": "Step-Out Plans - Field Planning & PM",
+        "h1": [
+          "Step-Out Plans"
+        ],
+        "bodyLength": 935,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nStep-Out Plans\n\nSequenced execution plans with work package generation and dependency tracking.\n\nRefresh\nNew Plan\nAll Status\n4 plans\nPLAN NAME\n\t\nSOURCE\n\t\nCLIENT\n\t\nSITE\n\t\nSTATUS\n\t\nSTART\n\t\nEND\n\t\nSTEPS\n\t\n\nValero PA Unit 8 Piping — Execution SOP\t\nEstimate\n\tValero Energy\tValero Port Arthur Refinery\t\nActive\n\tSep 1, 2026\tOct 15, 2026\t0\t\n\nExchanger Bundle Pull & Repair — Execution SOP\t\nEstimate\n\tBritish Petroleum\tBP Texas City Refinery\t\nComplete\n\tJan 15, 2025\tFeb 28, 2025\t0\t\n\nLNG Terminal Expansion — Draft SOP\t\nEstimate\n\tCheniere Energy\tSabine Pass LNG Terminal\t\nDraft\n\tAug 1, 2026\tSep 30, 2026\t0\t\n\nUni",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 4,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "Valero PA Unit 8 Piping — Execution SOP\t\nEstimate\n\tValero Energy\tValero Port Arthur Refinery\t\nActive\n\tSep 1, 2026\tOct 15, 2026\t0"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Exchanger Bundle Pull & Repair — Execution SOP\t\nEstimate\n\tBritish Petroleum\tBP Texas City Refinery\t\nComplete\n\tJan 15, 2025\tFeb 28, 2025\t0"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "LNG Terminal Expansion — Draft SOP\t\nEstimate\n\tCheniere Energy\tSabine Pass LNG Terminal\t\nDraft\n\tAug 1, 2026\tSep 30, 2026\t0"
+          },
+          {
+            "idx": 3,
+            "height": 65,
+            "text": "Unit 4 Piping Replacement — Execution SOP\t\nEstimate\n\tShell Oil Company\tShell Deer Park Refinery\t\nActive\n\tFeb 15, 2026\tApr 30, 2026\t0"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "New Plan",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/step-out-plans/new",
+      "name": "New Step-Out Plan",
+      "type": "form",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-step-out-plans-new.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/step-out-plans",
+        "title": "Step-Out Plans - Field Planning & PM",
+        "h1": [
+          "Step-Out Plans"
+        ],
+        "bodyLength": 935,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nStep-Out Plans\n\nSequenced execution plans with work package generation and dependency tracking.\n\nRefresh\nNew Plan\nAll Status\n4 plans\nPLAN NAME\n\t\nSOURCE\n\t\nCLIENT\n\t\nSITE\n\t\nSTATUS\n\t\nSTART\n\t\nEND\n\t\nSTEPS\n\t\n\nValero PA Unit 8 Piping — Execution SOP\t\nEstimate\n\tValero Energy\tValero Port Arthur Refinery\t\nActive\n\tSep 1, 2026\tOct 15, 2026\t0\t\n\nExchanger Bundle Pull & Repair — Execution SOP\t\nEstimate\n\tBritish Petroleum\tBP Texas City Refinery\t\nComplete\n\tJan 15, 2025\tFeb 28, 2025\t0\t\n\nLNG Terminal Expansion — Draft SOP\t\nEstimate\n\tCheniere Energy\tSabine Pass LNG Terminal\t\nDraft\n\tAug 1, 2026\tSep 30, 2026\t0\t\n\nUni",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 4,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "Valero PA Unit 8 Piping — Execution SOP\t\nEstimate\n\tValero Energy\tValero Port Arthur Refinery\t\nActive\n\tSep 1, 2026\tOct 15, 2026\t0"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Exchanger Bundle Pull & Repair — Execution SOP\t\nEstimate\n\tBritish Petroleum\tBP Texas City Refinery\t\nComplete\n\tJan 15, 2025\tFeb 28, 2025\t0"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "LNG Terminal Expansion — Draft SOP\t\nEstimate\n\tCheniere Energy\tSabine Pass LNG Terminal\t\nDraft\n\tAug 1, 2026\tSep 30, 2026\t0"
+          },
+          {
+            "idx": 3,
+            "height": 65,
+            "text": "Unit 4 Piping Replacement — Execution SOP\t\nEstimate\n\tShell Oil Company\tShell Deer Park Refinery\t\nActive\n\tFeb 15, 2026\tApr 30, 2026\t0"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "New Plan",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/work-packages",
+      "name": "Work Packages list",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-work-packages.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/work-packages",
+        "title": "Work Packages - Field Planning & PM",
+        "h1": [
+          "Work Packages"
+        ],
+        "bodyLength": 1392,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nWork Packages\n\nWork packages generated from step-out plans, ready for scheduling assignment.\n\nRefresh\nAll Status\nAll Packages\n11 packages\nTITLE\n\t\nCRAFT\n\t\nPEOPLE\n\t\nSTATUS\n\t\nSTART\n\t\nEND\n\t\nREADY FOR SCHEDULING\n\nWelding Crew — PWHT Scope\t\nWD\n\t2\t\nScheduled\n\tSep 20, 2026\tOct 12, 2026\t\nNot Ready\n\nPiping Crew — Unit 8 Spool Replacement\t\nPF\n\t5\t\nScheduled\n\tSep 1, 2026\tOct 10, 2026\t\nNot Ready\n\nBoilermaker / Welder Repair Crew\t\nBM\n\t4\t\nComplete\n\tFeb 13, 2025\tMar 3, 2025\t\nNot Ready\n\nBundle Pull / Rigging Crew\t\nRIG\n\t4\t\nComplete\n\tJan 19, 2025\tFeb 5, 2025\t\nNot Ready\n\nBoilermaker Crew — Heavy Component Support\t",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 11,
+        "maxRowHeight": 68,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 68,
+            "text": "Welding Crew — PWHT Scope\t\nWD\n\t2\t\nScheduled\n\tSep 20, 2026\tOct 12, 2026\t\nNot Ready"
+          },
+          {
+            "idx": 1,
+            "height": 68,
+            "text": "Piping Crew — Unit 8 Spool Replacement\t\nPF\n\t5\t\nScheduled\n\tSep 1, 2026\tOct 10, 2026\t\nNot Ready"
+          },
+          {
+            "idx": 2,
+            "height": 68,
+            "text": "Boilermaker / Welder Repair Crew\t\nBM\n\t4\t\nComplete\n\tFeb 13, 2025\tMar 3, 2025\t\nNot Ready"
+          },
+          {
+            "idx": 3,
+            "height": 68,
+            "text": "Bundle Pull / Rigging Crew\t\nRIG\n\t4\t\nComplete\n\tJan 19, 2025\tFeb 5, 2025\t\nNot Ready"
+          },
+          {
+            "idx": 4,
+            "height": 68,
+            "text": "Boilermaker Crew — Heavy Component Support\t\nBM\n\t4\t\nDraft\n\tAug 8, 2026\tSep 5, 2026\t\nNot Ready"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 68px."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/planning/fco",
+      "name": "FCO list",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/planning-fco.png",
+      "metrics": {
+        "url": "https://localhost:7310/planning/fco",
+        "title": "FCO / Change Orders - Field Planning & PM",
+        "h1": [
+          "FCO / Change Orders"
+        ],
+        "bodyLength": 762,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nFIELD PLANNING & PM\nProjects\nWork Orders\nPlans\nWork & Change\nFCO / Change Orders\n\nField Change Orders for scope modifications, schedule impacts, and contract value adjustments.\n\nRefresh\nNew FCO\nAll Status\n3 FCOs\nFCO #\n\t\nTITLE\n\t\nDATE\n\t\nREQUESTED BY\n\t\nSCHEDULE IMPACT\n\t\nCONTRACT VALUE\n\t\nSTATUS\n\t\n\nFCO-DEMO-C-002\tAdditional Insulation Restoration\tFeb 25, 2025\tProject Manager\t2 days\t$853,000\t\nSigned\n\t\n\nFCO-DEMO-C-001\tTube Sheet Weld Repair — Additional Scope\tFeb 12, 2025\tProject Manager\t3 days\t$825,000\t\nSigned\n\t\n\nFCO-DEMO-A-001\tAdditional Sleeve Repair at V-401\tMar 25, 2026\tJames Hartley\t5 days\t$1,335,000\t\nApproved\n\t\n1\n25",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 1,
+        "rowCount": 3,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "FCO-DEMO-C-002\tAdditional Insulation Restoration\tFeb 25, 2025\tProject Manager\t2 days\t$853,000\t\nSigned"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "FCO-DEMO-C-001\tTube Sheet Weld Repair — Additional Scope\tFeb 12, 2025\tProject Manager\t3 days\t$825,000\t\nSigned"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "FCO-DEMO-A-001\tAdditional Sleeve Repair at V-401\tMar 25, 2026\tJames Hartley\t5 days\t$1,335,000\t\nApproved"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "New FCO",
+          "Generate Document",
+          "Generate Document",
+          "Generate Document",
+          "First Page",
+          "Previous Page",
+          "1",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling",
+      "name": "Scheduling redirect",
+      "type": "redirect",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling.png",
+      "metrics": {
+        "url": "https://localhost:7310/dashboard",
+        "title": "Enterprise Estimating",
+        "h1": [],
+        "bodyLength": 0,
+        "bodySnippet": "",
+        "errorEls": [],
+        "tableCount": 0,
+        "entGridCount": 0,
+        "clickableGridCount": 0,
+        "rowCount": 0,
+        "maxRowHeight": 0,
+        "tallRows": [],
+        "buttons": [],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Critical",
+          "type": "Visual",
+          "message": "Page rendered blank or near-blank body text."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/dashboard",
+      "name": "Scheduling dashboard",
+      "type": "dashboard",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-dashboard.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/dashboard",
+        "title": "Scheduling Dashboard - Scheduling",
+        "h1": [
+          "Scheduling Dashboard",
+          "Active Demand"
+        ],
+        "bodyLength": 1518,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nScheduling Dashboard\n\nCoverage gaps, ending-soon alerts, available resources, and suggested matches.\n\nRefresh\n10\nCRAFT SHORTAGES\n2\nENDING THIS WEEK\n12\nAVAILABLE SOON\n39\nACTIVE JOBS\nJobs Board\nView all demand — estimates, staffing plans, work packages\nResources\nManage craft workers, certifications, and availability\nAssignments\nCreate and manage job assignments with conflict detection\nCoverage Analysis\nCraft demand vs assigned headcount\nRoll-Off\nResources whose assignments end within 7 days\nActive Demand\nView All\nSOURCE\n\t\nJOB NAME\n\t\nCLIENT\n\t\nSTATUS\n\t\nDATES\n\n\nEstimate\n\tShell Deer Park Crude Unit TA\tShell Oil Compa",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 0,
+        "rowCount": 8,
+        "maxRowHeight": 45,
+        "tallRows": [],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "View All",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": true,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/jobs",
+      "name": "Jobs Board",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-jobs.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/jobs",
+        "title": "Jobs Board - Scheduling",
+        "h1": [
+          "Jobs Board"
+        ],
+        "bodyLength": 3670,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nJobs Board\n\nAll active demand — awarded/pending estimates, approved staffing plans, and work packages ready for scheduling.\n\nRefresh\nAll Sources\n39 jobs\nSOURCE\n\t\nJOB NAME\n\t\nCLIENT\n\t\nSITE\n\t\nSTATUS\n\t\nSTART\n\t\nEND\n\t\n\n\nEstimate\n\t\nShell Deer Park Crude Unit TA\n\t\nShell Oil Company\n\t\nShell Deer Park Refinery\n\t\nAwarded\n\tJan 6, 2025\tFeb 2, 2025\t\nAssign\n\n\nEstimate\n\t\nBP Texas City — Exchanger Bundle Pull & Repair\n\t\nBritish Petroleum\n\t\nBP Texas City Refinery\n\t\nAwarded\n\tJan 15, 2025\tMar 5, 2025\t\nAssign\n\n\nEstimate\n\t\nBP Texas City Coker TA\n\t\nBritish Petroleum\n\t\nBP Texas City Refinery\n\t\nAwarded\n\tFeb 10, 2025\tMar 2, 2025\t\nAssign",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 0,
+        "rowCount": 25,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "Estimate\n\t\nShell Deer Park Crude Unit TA\n\t\nShell Oil Company\n\t\nShell Deer Park Refinery\n\t\nAwarded\n\tJan 6, 2025\tFeb 2, 2025\t\nAssign"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Estimate\n\t\nBP Texas City — Exchanger Bundle Pull & Repair\n\t\nBritish Petroleum\n\t\nBP Texas City Refinery\n\t\nAwarded\n\tJan 15, 2025\tMar 5, 2025\t\nAssign"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "Estimate\n\t\nBP Texas City Coker TA\n\t\nBritish Petroleum\n\t\nBP Texas City Refinery\n\t\nAwarded\n\tFeb 10, 2025\tMar 2, 2025\t\nAssign"
+          },
+          {
+            "idx": 3,
+            "height": 65,
+            "text": "Estimate\n\t\nDow Chemical Deer Park Ethylene TA\n\t\nDow Chemical\n\t\nDow Chemical Deer Park\n\t\nAwarded\n\tMar 3, 2025\tMar 16, 2025\t\nAssign"
+          },
+          {
+            "idx": 4,
+            "height": 65,
+            "text": "StaffingPlan\n\t\nExxonMobil Baytown Olefins Turnaround 2025\n\t\nExxonMobil\n\t\n\t\nApproved\n\tMar 3, 2025\tMar 30, 2025\t\nAssign"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "Assign",
+          "First Page",
+          "Previous Page",
+          "1"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": true,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        },
+        {
+          "severity": "Medium",
+          "type": "DeadEnd",
+          "message": "Rows exist but no ent-grid-clickable/detail affordance detected."
+        },
+        {
+          "severity": "High",
+          "type": "Logic",
+          "message": "Jobs board does not show Forecast/Released demand-state badges."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/resources",
+      "name": "Resources",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-resources.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/resources",
+        "title": "Resources - Scheduling",
+        "h1": [
+          "Resources"
+        ],
+        "bodyLength": 1459,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nResources\n\nManage craft workers, certifications, and availability.\n\nRefresh\nAdd Resource\nAll Crafts\nAll\nActive\nInactive\n24 resources\nNAME\n\t\nCRAFT\n\t\nBRANCH\n\t\nACTIVE\n\t\nCERTIFICATIONS\n\t\n\n\nAmy Turner\n\t\nIE\n\t\nBeaumont\n\t\t\nOSHA-10\n\t\n\n\nAngela Reyes\n\t\nCR\n\t\nBranch A\n\t\t\nCrane-Operator\n\t\n\n\nBobby Cruz\n\t\nPF\n\t\nCorpus Christi\n\t\t\nOSHA-10\n\t\n\n\nCarlos Reyes\n\t\nPF\n\t\nBeaumont\n\t\t\nH2S\nOSHA-10\n\t\n\n\nChris Lane\n\t\nPF\n\t\nHouston\n\t\t\nOSHA-10\n\t\n\n\nDana Hill\n\t\nBM\n\t\nBeaumont\n\t\t\nOSHA-10\n\t\n\n\nDarren Hill\n\t\nEL\n\t\nBranch B\n\t\t\nOSHA-30\n\t\n\n\nDerek Nguyen\n\t\nWD\n\t\nHouston\n\t\t\nAWS-CWI\n\t\n\n\nEddie Bass\n\t\nWD\n\t\nBeaumont\n\t\t\nAWS-CWI\nOSHA-10\n\t\n\n\nFrank Torres\n\t\nBM\n\t\nBeaumo",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 0,
+        "rowCount": 24,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "Amy Turner\n\t\nIE\n\t\nBeaumont\n\t\t\nOSHA-10"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Angela Reyes\n\t\nCR\n\t\nBranch A\n\t\t\nCrane-Operator"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "Bobby Cruz\n\t\nPF\n\t\nCorpus Christi\n\t\t\nOSHA-10"
+          },
+          {
+            "idx": 3,
+            "height": 65,
+            "text": "Carlos Reyes\n\t\nPF\n\t\nBeaumont\n\t\t\nH2S\nOSHA-10"
+          },
+          {
+            "idx": 4,
+            "height": 65,
+            "text": "Chris Lane\n\t\nPF\n\t\nHouston\n\t\t\nOSHA-10"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "Add Resource",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        },
+        {
+          "severity": "Medium",
+          "type": "DeadEnd",
+          "message": "Rows exist but no ent-grid-clickable/detail affordance detected."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/assignments",
+      "name": "Assignments",
+      "type": "list",
+      "needsClickableRows": true,
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-assignments.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/assignments",
+        "title": "Assignments - Scheduling",
+        "h1": [
+          "Assignments"
+        ],
+        "bodyLength": 2983,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nAssignments\n\nAssign resources to jobs with double-booking and certification conflict detection.\n\nRefresh\nNew Assignment\n28 assignments\nRESOURCE\n\t\nJOB\n\t\nCRAFT\n\t\nSHIFT\n\t\nSTART\n\t\nEND\n\t\nSTATUS\n\t\n\n\nJames Hartley\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nSUP\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed\n\t\n\n\nTom Bradley\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed\n\t\n\n\nMike Chen\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed\n\t\n\n\nCarlos Reyes\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed\n\t\n\n",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 0,
+        "rowCount": 25,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "James Hartley\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nSUP\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Tom Bradley\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed"
+          },
+          {
+            "idx": 2,
+            "height": 65,
+            "text": "Mike Chen\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed"
+          },
+          {
+            "idx": 3,
+            "height": 65,
+            "text": "Carlos Reyes\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nPF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed"
+          },
+          {
+            "idx": 4,
+            "height": 65,
+            "text": "Pat O'Brien\n\t\nPiping Crew — Spool A/B/C Installation\n\t\nSAF\n\t\nDay\n\tFeb 15, 2026\tMay 15, 2026\t\nConfirmed"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "New Assignment",
+          "First Page",
+          "Previous Page",
+          "1",
+          "2",
+          "Next Page",
+          "Last Page",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": true,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        },
+        {
+          "severity": "Medium",
+          "type": "DeadEnd",
+          "message": "Rows exist but no ent-grid-clickable/detail affordance detected."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/coverage",
+      "name": "Coverage",
+      "type": "coverage",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-coverage.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/coverage",
+        "title": "Craft Coverage - Scheduling",
+        "h1": [
+          "Craft Coverage"
+        ],
+        "bodyLength": 1400,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nCraft Coverage\n\nDemand vs assigned headcount by craft. Single-click to select — double-click to drill down.\n\nRefresh\n10\nCRAFTS SHORT\n61\nOPEN POSITIONS\n12\nASSIGNED TODAY\n18%\nOVERALL COVERAGE\nDEMAND\nAll\nReleased\nForecast\nAll Regions\nAll Branches\nSingle click = select  ·  Double click = drill down\nCRAFT\nCOVERAGE\nDEMAND / ASSIGNED / GAP / %\nSUP\nSupervisor / Foreman\n7%\n14\nDEMAND\n1\nASSIGNED\n–13\nGAP\n7%\nCOVERAGE\nSAF\nSafety\n10%\n10\nDEMAND\n1\nASSIGNED\n–9\nGAP\n10%\nCOVERAGE\nBM\nBoilermaker\n0%\n7\nDEMAND\n0\nASSIGNED\n–7\nGAP\n0%\nCOVERAGE\nMGT\nProject Manager\n0%\n7\nDEMAND\n0\nASSIGNED\n–7\nGAP\n0%\nCOVERAGE\nPFH\nPipefitter Helper\n0%\n7\nDEMAND\n0",
+        "errorEls": [],
+        "tableCount": 0,
+        "entGridCount": 0,
+        "clickableGridCount": 0,
+        "rowCount": 0,
+        "maxRowHeight": 0,
+        "tallRows": [],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "All",
+          "Released",
+          "Forecast",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": true,
+        "hasReleasedBadge": true,
+        "hasAssignText": false,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    {
+      "route": "/scheduling/roll-off",
+      "name": "Ending Soon / Roll-Off",
+      "type": "list",
+      "screenshot": "docs/qa-evidence/QA_AUDIT_20260429_PM_SCHED_FULL/scheduling-roll-off.png",
+      "metrics": {
+        "url": "https://localhost:7310/scheduling/roll-off",
+        "title": "Ending Soon - Scheduling",
+        "h1": [
+          "Ending Soon"
+        ],
+        "bodyLength": 585,
+        "bodySnippet": "DEV\nCSL — Cat-Spec, Ltd.\nETS — Elite TA Specialists\nSTS — Specialty Tank Svc\nSTG — Stronghold Tower\nGLOBAL — Global Analytics\ndev.user\nCSL\nSCHEDULING\nOverview\nJobs & People\nCoverage\nEnding Soon\n\nResources whose assignments end within the selected window. Plan their next deployment.\n\n7 days\n14 days\n30 days\nRefresh\nRESOURCE\n\t\nCRAFT\n\t\nCURRENT JOB\n\t\nEND DATE\n\t\nDAYS LEFT\n\t\nNEXT MATCH\n\t\n\n\nMike Torres\n\t\nPP\n\t\nBP Baytown Crude Unit Pre-TA Isolation\n\tMay 4, 2026\t5d\t\nMike Torres\n\t\nRe-Assign\n\n\nSarah Vance\n\t\nPP\n\t\nBP Baytown Crude Unit Pre-TA Isolation\n\tMay 4, 2026\t5d\t\nMike Torres\n\t\nRe-Assign",
+        "errorEls": [],
+        "tableCount": 1,
+        "entGridCount": 1,
+        "clickableGridCount": 0,
+        "rowCount": 2,
+        "maxRowHeight": 65,
+        "tallRows": [
+          {
+            "idx": 0,
+            "height": 65,
+            "text": "Mike Torres\n\t\nPP\n\t\nBP Baytown Crude Unit Pre-TA Isolation\n\tMay 4, 2026\t5d\t\nMike Torres\n\t\nRe-Assign"
+          },
+          {
+            "idx": 1,
+            "height": 65,
+            "text": "Sarah Vance\n\t\nPP\n\t\nBP Baytown Crude Unit Pre-TA Isolation\n\tMay 4, 2026\t5d\t\nMike Torres\n\t\nRe-Assign"
+          }
+        ],
+        "buttons": [
+          "Switch to light mode",
+          "Refresh",
+          "Re-Assign",
+          "Re-Assign",
+          "Open AI assistant (drag to move)"
+        ],
+        "hasForecastBadge": false,
+        "hasReleasedBadge": false,
+        "hasAssignText": true,
+        "hasRawWpIdHeader": false
+      },
+      "findings": [
+        {
+          "severity": "Medium",
+          "type": "Density",
+          "message": "Tall rows detected; max row height 65px."
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    }
+  ]
+}

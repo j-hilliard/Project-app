@@ -236,13 +236,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
 import { useToast } from 'primevue/usetoast';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { workOrderStatusSeverity as statusSeverity } from '@/ui';
 
 const route = useRoute();
 const router = useRouter();
-const apiStore = useApiStore();
 const toast = useToast();
+const { getWorkOrder, getWorkOrderFinancials, releaseWorkOrder, setWorkOrderStatus } = usePlanningService();
+const { fmtDate, fmtCurrency } = useFormatters();
 
 const woId = Number(route.params.id);
 const fromProjectId = route.query.projectId ? Number(route.query.projectId) : null;
@@ -286,27 +289,6 @@ const forecastClass = computed(() => {
     return new Date(wo.value.forecastEnd) > new Date(wo.value.plannedEnd) ? 'plan-date-late' : '';
 });
 
-function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function fmtCurrency(v: number | null | undefined): string {
-    if (v == null || v === 0) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-}
-
-function statusSeverity(s: string): string {
-    switch (s) {
-        case 'Released': return 'success';
-        case 'InProgress': return 'info';
-        case 'Draft': return 'secondary';
-        case 'Complete': case 'Closed': return 'contrast';
-        case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
 function openStatusDialog() {
     newStatus.value = wo.value?.status ?? null;
     statusError.value = null;
@@ -317,8 +299,8 @@ async function release() {
     releaseLoading.value = true;
     releaseError.value = null;
     try {
-        const { data } = await apiStore.api.patch(`/api/v1/work-orders/${woId}/release`);
-        wo.value = { ...wo.value, ...data };
+        const result = await releaseWorkOrder(woId);
+        wo.value = { ...wo.value, ...result };
         toast.add({ severity: 'success', summary: 'Work Order Released', life: 2500 });
     } catch (e: any) {
         const body = e?.response?.data;
@@ -333,8 +315,8 @@ async function changeStatus() {
     statusLoading.value = true;
     statusError.value = null;
     try {
-        const { data } = await apiStore.api.patch(`/api/v1/work-orders/${woId}/status`, { status: newStatus.value });
-        wo.value = { ...wo.value, ...data };
+        const result = await setWorkOrderStatus(woId, newStatus.value);
+        wo.value = { ...wo.value, ...result };
         showStatusDialog.value = false;
         toast.add({ severity: 'success', summary: 'Status Updated', life: 2500 });
     } catch (e: any) {
@@ -348,8 +330,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get(`/api/v1/work-orders/${woId}`);
-        wo.value = data;
+        wo.value = await getWorkOrder(woId);
         loadFinancials();
     } catch {
         error.value = true;
@@ -360,8 +341,7 @@ async function load() {
 
 async function loadFinancials() {
     try {
-        const { data } = await apiStore.api.get(`/api/v1/work-orders/${woId}/financials`);
-        financials.value = data;
+        financials.value = await getWorkOrderFinancials(woId);
     } catch {
         // financials panel stays hidden on error
     }

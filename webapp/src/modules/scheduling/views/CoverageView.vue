@@ -135,11 +135,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
 import CraftCoverageBar from '../components/CraftCoverageBar.vue';
 import CraftDetailDrawer from '../components/CraftDetailDrawer.vue';
 
-const apiStore = useApiStore();
+const { getCoverage, getSuggestedMatches } = useSchedulingService();
 
 const loading = ref(false);
 const error = ref(false);
@@ -269,12 +269,9 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [covResp, matchResp] = await Promise.all([
-            apiStore.api.get('/api/v1/scheduling/coverage'),
-            apiStore.api.get('/api/v1/scheduling/suggested-matches'),
-        ]);
-        coverage.value = covResp.data;
-        allMatches.value = matchResp.data;
+        const [covData, matchData] = await Promise.all([getCoverage(), getSuggestedMatches()]);
+        coverage.value = covData;
+        allMatches.value = matchData;
     } catch {
         error.value = true;
     } finally {

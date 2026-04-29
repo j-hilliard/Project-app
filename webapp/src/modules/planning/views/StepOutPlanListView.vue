@@ -107,12 +107,15 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { planStatusSeverity as statusSeverity } from '@/ui';
 
 const router = useRouter();
-const apiStore = useApiStore();
 const toast = useToast();
 const confirm = useConfirm();
+const { listStepOutPlans, createStepOutPlan, deleteStepOutPlan } = usePlanningService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -141,18 +144,6 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed */ }
 
-function statusSeverity(s: string) {
-    if (s === 'Active') return 'success';
-    if (s === 'Complete') return 'info';
-    if (s === 'Archived') return 'secondary';
-    return 'warning';
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 const formVisible = ref(false);
 const form = ref({ name: '', client: '', site: '', plannedStart: null as Date | null, plannedEnd: null as Date | null, notes: '' });
 
@@ -168,10 +159,10 @@ async function savePlan() {
     }
     saving.value = true;
     try {
-        const { data } = await apiStore.api.post('/api/v1/planning/step-out-plans', { ...form.value, status: 'Draft' });
+        const newPlan = await createStepOutPlan({ ...form.value, status: 'Draft' });
         formVisible.value = false;
         toast.add({ severity: 'success', summary: 'Plan Created', life: 2000 });
-        router.push(`/planning/step-out-plans/${data.planId}`);
+        router.push(`/planning/step-out-plans/${newPlan.planId}`);
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Could not create plan.', life: 3000 });
     } finally {
@@ -187,7 +178,7 @@ function confirmDelete(plan: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.delete(`/api/v1/planning/step-out-plans/${plan.planId}`);
+                await deleteStepOutPlan(plan.planId);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -201,8 +192,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/planning/step-out-plans');
-        plans.value = data;
+        plans.value = await listStepOutPlans();
     } catch (e: any) {
         if (!e.response) {
             errorMessage.value = 'Could not reach the API. It may still be starting — try refreshing in a moment.';

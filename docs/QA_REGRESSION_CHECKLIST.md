@@ -32,6 +32,59 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 | Actuals / Delta | `QA-ACT` | Planning + Cost QA Auditor |
 | FCO / Change Order | `QA-FCO` | Planning + Document QA Auditor |
 | Project Lifecycle / Stage Gates | `QA-LIFE` | Platform Lifecycle Auditor |
+| Architecture Guardrails | `QA-ARCH` | Backend + Frontend Architecture Auditor |
+
+---
+
+## QA-ARCH Lane — Architecture Guardrail Checks
+
+> Run `bash tools/architecture-checks/run-all-checks.sh` from the repo root.
+> Include the full output and exit code in every audit evidence packet.
+> Backend checks hard-fail. Frontend checks are warn-mode until Batch 3-4 lands.
+> Use `--strict-frontend` flag once all PM/Scheduling views are refactored.
+
+### QA-ARCH-001: AppDbContext must not contain inline entity configuration
+- **Rule:** ARCH-BE-002 + ARCH-BE-007 + ARCH-BE-008
+- **Verification:** `check-backend.sh` ARCH-BE-002 and ARCH-BE-008 both PASS
+- **Regression trigger:** Any `modelBuilder.Entity<T>` block added back to `Data/AppDbContext.cs`
+- **Fixed in:** Batch 1 (2026-04-29)
+
+### QA-ARCH-002: Cleaned controllers must not accept raw EF entities as [FromBody]
+- **Rule:** ARCH-BE-001
+- **Applies to:** ProjectController, WorkOrderController, PlanningController, SchedulingController
+- **Verification:** `check-backend.sh` ARCH-BE-001 PASS
+- **Regression trigger:** Any new endpoint in these controllers binds a raw EF entity type
+- **Fixed in:** Batch 1 (2026-04-29)
+
+### QA-ARCH-003: Required service files must exist
+- **Rule:** ARCH-BE-005 + ARCH-BE-006
+- **Verification:** `check-backend.sh` ARCH-BE-005 both PASS
+- **Regression trigger:** `FcoDocumentService.cs` or `WorkOrderFinancialService.cs` deleted or moved
+- **Fixed in:** Batch 1 (2026-04-29)
+
+### QA-ARCH-004: StatusUpdateRequest must not be redefined in controllers
+- **Rule:** ARCH-BE-003
+- **Verification:** `check-backend.sh` ARCH-BE-003 PASS
+- **Regression trigger:** Any controller adds `record StatusUpdateRequest` inline
+- **Fixed in:** Batch 1 (2026-04-29)
+
+### QA-ARCH-005: PM/Scheduling views must not import useApiStore directly (WARN mode — pending Batch 3-4)
+- **Rule:** ARCH-FE-001
+- **Current state:** 16 violations — warn-only until views are refactored
+- **Verification after Batch 4:** `check-frontend.sh --strict` ARCH-FE-001 PASS
+- **Escalate to fail:** Add `--strict-frontend` to `run-all-checks.sh` after Batch 4
+
+### QA-ARCH-006: PM/Scheduling views must not call apiStore.api directly (WARN mode — pending Batch 3-4)
+- **Rule:** ARCH-FE-002
+- **Current state:** 53 violations — warn-only until views are refactored
+
+### QA-ARCH-007: PM/Scheduling views must not define formatters locally (WARN mode — pending Batch 2-4)
+- **Rules:** ARCH-FE-003, ARCH-FE-004, ARCH-FE-005, ARCH-FE-006
+- **Current state:** 15+4+10+2 violations — warn-only until design system and service layer land
+
+### QA-ARCH-008: run-all-checks.sh must exit 0 on every audit
+- **Verification:** Run `bash tools/architecture-checks/run-all-checks.sh`; confirm final line is `OVERALL RESULT: PASSED`
+- **This is the single gate** — if it fails, all other ARCH items are suspect
 
 ---
 
@@ -1198,3 +1251,58 @@ When a new bug is found and fixed:
 2. Fill out: Past failure, Fixed (brief), Verify steps.
 3. The fix owner adds the entry — not the testing agent.
 4. On the next agent run, the new item must produce PASS.
+
+---
+
+## PM + Scheduling Full Sweep Baseline - 2026-04-29
+
+Evidence: `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`
+
+| ID | Check | Current Status | Evidence / Notes |
+|----|-------|----------------|------------------|
+| QA-PLAT-011 | QA automation must target Project-app ports, not old repo ports. | FAIL | Playwright config targets `7210/7211`; port inspection showed old repo owns those ports. Project-app owns `7310/7311`. |
+| QA-UI-010 | PM/Scheduling route audit must assert visible content and screenshots on Project-app. | FAIL | Prior smoke passed with blank screenshots and wrong ports; new audit has real screenshots and findings. |
+| QA-PLAT-004 | `/planning` and `/scheduling` module roots load visible app shells. | FAIL | Root redirects resolved to `/projects` and `/dashboard`, near-blank pages. |
+| QA-PLAN-011 | Planning root route redirects to `/planning/projects`. | FAIL | Evidence: `planning.png`. |
+| QA-SCHED-010 | Scheduling root route redirects to `/scheduling/dashboard`. | FAIL | Evidence: `scheduling.png`. |
+| QA-UI-011 | PM + Scheduling tables use Work Orders dense row baseline. | FAIL | Step-Out, Work Packages, FCO, Jobs, Resources, Assignments, Roll-Off show 65-68px rows vs Work Orders 46px. |
+| QA-PLAN-012 | Planning list rows are compact, one-line, and ellipsized. | FAIL | Step-Out, Work Packages, and FCO fail row-height target. |
+| QA-SCHED-011 | Scheduling list rows are compact, one-line, and ellipsized. | FAIL | Jobs, Resources, Assignments, Roll-Off fail row-height target. |
+| QA-SCHED-012 | Jobs Board shows Forecast/Released demand state per row. | FAIL | Jobs Board shows source/status labels but no locked demand-state badges. |
+| QA-SCHED-013 | Assignment create/update rejects Forecast/unreleased demand server-side. | FAIL | Logic audit found assignment endpoint accepts source/id without released demand validation. |
+| QA-SCHED-014 | Scheduling assignments use controlled craft reference, not free-text. | FAIL | UI and model still use `craftCode` text patterns. |
+| QA-PLAN-013 | WorkPackage list/detail use canonical package numbers. | FAIL | Detail can display raw `WP-{packageId}` and list does not prove WP number column. |
+| QA-UI-012 | WorkPackage Ready toggle does not trigger row navigation. | NOT VERIFIED / RISK | Toggle sits inside clickable row; needs event-stop verification after fix. |
+| QA-PLAN-014 | New Step-Out Plan route opens a create form or is removed. | FAIL | `/planning/step-out-plans/new` redirects back to list. |
+| QA-FCO-003 | FCO create/update requires Estimate + WorkOrder traceability. | FAIL | FCO links remain nullable and controller does not hard-gate. |
+| QA-LIFE-003 | WorkOrder release/status transitions enforce lifecycle gates. | FAIL | Status endpoint can bypass release gate. |
+| QA-EST-020 | Awarded/linked estimates are protected from casual mutation. | OPEN / JOSEPH DECISION REQUIRED | Fix requires touching frozen Estimating endpoints, so Joseph approval is required before implementation. |
+
+---
+
+## Architecture / UI System Guardrail Lane - Added 2026-04-29
+
+These checks are mandatory for the `refactor/pm-scheduling-foundation` cleanup branch and every PM/Scheduling batch after it. Codex/testers must treat failures as defects, not suggestions.
+
+| ID | Check | Current Status | Evidence / Notes |
+|----|-------|----------------|------------------|
+| QA-ARCH-009 | PM/Scheduling pages use the shared UI system for page shell, header, filter bar, status tag, table/list, detail shell/card, row actions, and empty state. | NEW / REQUIRED | Work Orders dense list remains the density baseline until replaced by an explicit shared standard. Complements existing `QA-ARCH-005` through `QA-ARCH-007`. |
+| QA-ARCH-010 | Dev seeding/bootstrap orchestration lives in services/bootstrap layers, not a monolith `DevController`. | NEW / REQUIRED | Seed/reset behavior must remain idempotent and environment-safe. |
+| QA-ARCH-011 | Architecture guardrail docs and tester rules are updated before cleanup is called done. | NEW / REQUIRED | Cleanup is incomplete unless docs, regression checks, and tester/Codex rules reflect the permanent architecture rules. |
+| QA-UI-013 | Shared date/currency/status display rules are consistent across PM and Scheduling. | NEW / REQUIRED | Tables/lists: `MMM d, yyyy`; detail views: `MMMM d, yyyy`; 4-digit year always. |
+| QA-UI-014 | PM and Scheduling route-to-route visual consistency remains intact after refactors. | NEW / REQUIRED | Playwright screenshot pass must cover page shell, density, filter bars, row actions, badges, empty states, drawers/modals. |
+| QA-BE-001 | Controllers remain thin transport layers after cleanup. | NEW / REQUIRED | Business logic belongs in services/handlers; WorkOrder financial rollups must be service-owned. |
+| QA-BE-002 | `WorkOrderFinancialService` or equivalent owns work-order financial calculations. | NEW / REQUIRED | No inline financial rollup logic in `WorkOrderController`. |
+| QA-BE-003 | Planning/Scheduling services preserve lifecycle gates and personnel-only scheduling boundaries. | NEW / REQUIRED | Scheduling remains personnel-only; Gantt/timeline remain Planning-only; Forecast demand remains not assignable. |
+
+### Architecture Guardrail Retest Minimum
+
+After each Claude cleanup batch, Codex/testers must run or manually verify:
+
+- `git status --short --branch`
+- backend build
+- frontend build
+- architecture-check script once it exists
+- targeted grep/static scan for `useApiStore`, `apiStore.api`, local formatter/status helpers, raw EF `[FromBody]` entity patterns, and inline `modelBuilder.Entity`
+- Playwright PM/Scheduling route audit against Project-app ports `7310/7311`, not old repo ports `7210/7211`
+- screenshot comparison for PM/Scheduling density and visual consistency

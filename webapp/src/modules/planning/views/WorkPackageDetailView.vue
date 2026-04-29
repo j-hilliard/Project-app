@@ -117,31 +117,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { workPackageStatusSeverity as statusSeverity } from '@/ui';
 
 const route = useRoute();
 const router = useRouter();
-const apiStore = useApiStore();
+const { getWorkPackage } = usePlanningService();
+const { fmtDate } = useFormatters();
 
 const pkgId = Number(route.params.id);
 
 const loading = ref(false);
 const error = ref(false);
 const wp = ref<any>(null);
-
-function statusSeverity(s: string): string {
-    switch (s) {
-        case 'InProgress': return 'info';
-        case 'Complete': return 'contrast';
-        case 'Draft': return 'secondary';
-        default: return 'secondary';
-    }
-}
-
-function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 const permitGateClass = computed(() => {
     if (!wp.value?.permitRequired) return 'wp-gate-na';
@@ -195,8 +184,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get(`/api/v1/planning/work-packages/${pkgId}`);
-        wp.value = data;
+        wp.value = await getWorkPackage(pkgId);
     } catch {
         error.value = true;
     } finally {

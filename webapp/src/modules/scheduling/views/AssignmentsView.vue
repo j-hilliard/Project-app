@@ -131,11 +131,14 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { useApiStore } from '@/stores/apiStore';
+import { useSchedulingService } from '../services/useSchedulingService';
+import { useFormatters } from '@/ui';
+import { assignmentStatusSeverity as statusSeverity } from '@/ui';
 
-const apiStore = useApiStore();
 const toast = useToast();
 const confirm = useConfirm();
+const { listAssignments, listResources, listJobs, createAssignment, updateAssignment, deleteAssignment } = useSchedulingService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -155,17 +158,6 @@ const filtered = computed(() => {
 });
 
 function applyFilters() { /* computed */ }
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function statusSeverity(s: string) {
-    if (s === 'Confirmed') return 'success';
-    if (s === 'Cancelled') return 'danger';
-    return 'info';
-}
 
 const formVisible = ref(false);
 const editMode = ref(false);
@@ -220,18 +212,16 @@ async function saveAssignment() {
             shift: form.value.shift,
             status: form.value.status,
         };
-        let data: any;
+        let result: any;
         if (editMode.value && editId.value) {
-            const resp = await apiStore.api.put(`/api/v1/scheduling/assignments/${editId.value}`, payload);
-            data = resp.data;
+            result = await updateAssignment(editId.value, payload);
         } else {
-            const resp = await apiStore.api.post('/api/v1/scheduling/assignments', payload);
-            data = resp.data;
+            result = await createAssignment(payload);
         }
         formVisible.value = false;
         toast.add({ severity: 'success', summary: editMode.value ? 'Saved' : 'Assignment Created', life: 2000 });
-        if (data.hasConflicts) {
-            conflicts.value = data.conflicts;
+        if (result.hasConflicts) {
+            conflicts.value = result.conflicts;
             conflictVisible.value = true;
         }
         await load();
@@ -250,7 +240,7 @@ function confirmDelete(a: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.delete(`/api/v1/scheduling/assignments/${a.assignmentId}`);
+                await deleteAssignment(a.assignmentId);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -264,14 +254,10 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [assignResp, resResp, jobsResp] = await Promise.all([
-            apiStore.api.get('/api/v1/scheduling/assignments'),
-            apiStore.api.get('/api/v1/scheduling/resources'),
-            apiStore.api.get('/api/v1/scheduling/jobs'),
-        ]);
-        assignments.value = assignResp.data;
-        resources.value = resResp.data;
-        jobs.value = jobsResp.data;
+        const [assignData, resData, jobsData] = await Promise.all([listAssignments(), listResources(), listJobs()]);
+        assignments.value = assignData;
+        resources.value = resData;
+        jobs.value = jobsData;
     } catch {
         error.value = true;
     } finally {

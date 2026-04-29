@@ -215,13 +215,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
 import { useToast } from 'primevue/usetoast';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import {
+    projectStatusSeverity as statusSeverity,
+    phaseStatusSeverity,
+    taskStatusSeverity,
+    workOrderStatusSeverity as woStatusSeverity,
+    milestoneStatusSeverity as msStatusSeverity,
+} from '@/ui';
 
 const route = useRoute();
 const router = useRouter();
-const apiStore = useApiStore();
 const toast = useToast();
+const { getProjectFull, setProjectStatus, lockProjectBaseline } = usePlanningService();
+const { fmtDate, fmtCurrency } = useFormatters();
 
 const projectId = Number(route.params.id);
 const loading = ref(false);
@@ -269,66 +278,6 @@ function togglePhase(phaseId: number) {
     }
 }
 
-function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function fmtCurrency(v: number | null | undefined): string {
-    if (v == null || v === 0) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-}
-
-function statusSeverity(s: string): string {
-    switch (s) {
-        case 'Active': return 'success';
-        case 'Monitoring': return 'info';
-        case 'Closing': case 'OnHold': return 'warn';
-        case 'Closed': case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-function phaseStatusSeverity(s: string): string {
-    switch (s) {
-        case 'Active': return 'success';
-        case 'Complete': return 'contrast';
-        case 'OnHold': return 'warn';
-        case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-function taskStatusSeverity(s: string): string {
-    switch (s) {
-        case 'InProgress': return 'info';
-        case 'Complete': return 'success';
-        case 'Blocked': return 'danger';
-        case 'OnHold': return 'warn';
-        default: return 'secondary';
-    }
-}
-
-function woStatusSeverity(s: string): string {
-    switch (s) {
-        case 'Released': return 'success';
-        case 'InProgress': return 'info';
-        case 'Draft': return 'secondary';
-        case 'Complete': case 'Closed': return 'contrast';
-        case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-function msStatusSeverity(s: string): string {
-    switch (s) {
-        case 'Achieved': return 'success';
-        case 'Missed': return 'danger';
-        case 'Cancelled': return 'secondary';
-        default: return 'info';
-    }
-}
-
 function barClass(task: any): string {
     if (task.status === 'Complete') return 'plan-bar-complete';
     if (task.status === 'Blocked') return 'plan-bar-blocked';
@@ -346,10 +295,10 @@ async function changeStatus() {
     statusLoading.value = true;
     statusError.value = null;
     try {
-        const { data } = await apiStore.api.patch(`/api/v1/projects/${projectId}/status`, { status: newStatus.value });
-        project.value.status = data.status;
-        project.value.actualStart = data.actualStart;
-        project.value.actualEnd = data.actualEnd;
+        const result = await setProjectStatus(projectId, newStatus.value);
+        project.value.status = result.status;
+        project.value.actualStart = result.actualStart;
+        project.value.actualEnd = result.actualEnd;
         showStatusDialog.value = false;
         toast.add({ severity: 'success', summary: 'Status Updated', life: 2500 });
     } catch (e: any) {
@@ -363,14 +312,11 @@ async function lockBaseline() {
     baselineLoading.value = true;
     baselineError.value = null;
     try {
-        const { data } = await apiStore.api.post(`/api/v1/projects/${projectId}/baseline`, {
-            label: baselineLabel.value || null,
-            reason: baselineReason.value || null,
-        });
+        const result = await lockProjectBaseline(projectId, baselineLabel.value || null, baselineReason.value || null);
         showBaseline.value = false;
         baselineLabel.value = '';
         baselineReason.value = '';
-        toast.add({ severity: 'success', summary: 'Baseline Locked', detail: `${data.snapshotsCreated} snapshots created.`, life: 3000 });
+        toast.add({ severity: 'success', summary: 'Baseline Locked', detail: `${result.snapshotsCreated} snapshots created.`, life: 3000 });
     } catch {
         baselineError.value = 'Failed to lock baseline. Please try again.';
     } finally {
@@ -382,9 +328,8 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get(`/api/v1/projects/${projectId}/full`);
+        const data = await getProjectFull(projectId);
         project.value = data;
-        // Auto-expand all phases on initial load
         for (const ph of data.phases ?? []) {
             expandedPhases.value.add(ph.phaseId);
         }

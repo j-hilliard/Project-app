@@ -23,7 +23,11 @@ Format: Date | Phase | Command | Purpose | Result | Notes
 | 2026-04-29 | Project-app runtime audit | `npm.cmd --prefix webapp install` | Restore missing frontend dependencies needed for build/test | PASS | Dependencies installed; 0 npm vulnerabilities reported. |
 | 2026-04-29 | Project-app runtime audit | `npm.cmd --prefix webapp run build:dev` | Verify frontend compile after Claude platform changes | PASS | Vite build succeeded with portal/planning/scheduling chunks emitted. |
 | 2026-04-29 | Project-app runtime audit | `dotnet test --no-restore --configuration Release` | Check for backend tests | PASS / NO TEST OUTPUT | Repo has no backend test project; command exited 0 without test output. |
-| 2026-04-29 | Project-app runtime audit | `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` | Safe read-only planning/scheduling smoke | PASS BUT WEAK | Global setup skipped and tests passed, but screenshots were blank dark pages. Existing smoke spec is inadequate because it does not assert visible content. Evidence: `docs/QA_EVIDENCE_20260429_PROJECT_APP_RUNTIME.md`. |
+| 2026-04-29 | Project-app runtime audit | `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` | Initial planning/scheduling smoke | SUPERSEDED / INVALID FOR PROJECT-APP ROUTE PROOF | Later port inspection showed this Playwright config targets `7210/7211`, which were owned by the old repo. Do not use this as Project-app UI evidence. Use `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`. |
+| 2026-04-29 | PM/Scheduling full QA sweep | Manual polling mode | Watch-mode declaration | INFO | Persistent background watch is not supported in this session; Codex is operating in manual polling mode at turn start and when Claude reports changes. |
+| 2026-04-29 | PM/Scheduling full QA sweep | Port/process inspection | Prevent testing wrong repo | FAIL -> ROOT CAUSE FOUND | Project-app owns `7310/7311`; old handoff repo owns `7210/7211`. Existing Playwright config points at `7210/7211`, so earlier route smoke evidence is superseded for Project-app. |
+| 2026-04-29 | PM/Scheduling full QA sweep | `node test-results/qa/QA_AUDIT_20260429_PM_SCHED_FULL/pm-scheduling-audit.mjs` | Route/density/visual/logic audit across PM + Scheduling | FAIL WITH FINDINGS | 15 routes/screens checked against Project-app `7310/7311`; 14 findings. Evidence: `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`. Cleanup: only QA screenshots/logs created; no seeded data deleted. |
+| 2026-04-29 | Architecture cleanup QA guardrails | QA docs update only | Teach Codex/tester lanes to fail PM/Scheduling structure drift during `refactor/pm-scheduling-foundation` cleanup | PASS / DOCS ONLY | Added `ARCH-001` through `ARCH-008` to `LIVE_QA_TODO.md` and added/linked unique `QA-ARCH-009` through `QA-ARCH-011`, `QA-UI-*`, and `QA-BE-*` guardrails in `QA_REGRESSION_CHECKLIST.md`. Existing `QA-ARCH-001` through `QA-ARCH-008` from Claude's Batch 1 remain intact. No product code changed. |
 ---
 
 ## Known Commands
@@ -52,4 +56,6 @@ cd Api && nswag run nswag.json
 - Playwright e2e tests exist in `webapp/tests/e2e/`; use `SKIP_GLOBAL_SETUP=true` to avoid mutating demo data.
 - Build checks (`dotnet build` and `npm run build`) are the primary automated gate.
 - Manual browser verification is required for UI changes.
+
+
 

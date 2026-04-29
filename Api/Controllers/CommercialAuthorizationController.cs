@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Common;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models.Planning;
 
@@ -130,4 +131,3 @@ public class CommercialAuthorizationController : ControllerBase
     }
 }
 
-public record StatusUpdateRequest(string Status);

@@ -181,12 +181,19 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { stepStatusSeverity } from '@/ui';
 
 const router = useRouter();
 const route = useRoute();
-const apiStore = useApiStore();
 const toast = useToast();
+const {
+    getStepOutPlan, updateStepOutPlan,
+    createStep, updateStep, deleteStep: deleteStepApi,
+    generateWorkPackages,
+} = usePlanningService();
+const { fmtDateLong: fmtDate } = useFormatters();
 
 const planId = computed(() => route.params.id ? Number(route.params.id) : null);
 const loading = ref(false);
@@ -199,22 +206,10 @@ const workPackages = ref<any[]>([]);
 
 const planStatusOptions = ['Draft', 'Active', 'Complete', 'Archived'];
 
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function stepStatusSeverity(s: string) {
-    if (s === 'Complete') return 'success';
-    if (s === 'InProgress') return 'info';
-    if (s === 'Blocked') return 'danger';
-    return 'secondary';
-}
-
 async function savePlanStatus() {
     if (!planId.value || !plan.value) return;
     try {
-        await apiStore.api.put(`/api/v1/planning/step-out-plans/${planId.value}`, plan.value);
+        await updateStepOutPlan(planId.value, plan.value);
         toast.add({ severity: 'success', summary: 'Status Updated', life: 2000 });
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Could not update plan.', life: 3000 });
@@ -259,9 +254,9 @@ async function saveStep() {
     saving.value = true;
     try {
         if (editStepMode.value && editStepId.value) {
-            await apiStore.api.put(`/api/v1/planning/step-out-plans/${planId.value}/steps/${editStepId.value}`, stepForm.value);
+            await updateStep(planId.value, editStepId.value, stepForm.value);
         } else {
-            await apiStore.api.post(`/api/v1/planning/step-out-plans/${planId.value}/steps`, stepForm.value);
+            await createStep(planId.value, stepForm.value);
         }
         stepFormVisible.value = false;
         toast.add({ severity: 'success', summary: editStepMode.value ? 'Step Saved' : 'Step Added', life: 2000 });
@@ -276,7 +271,7 @@ async function saveStep() {
 async function deleteStep(step: any) {
     if (!planId.value) return;
     try {
-        await apiStore.api.delete(`/api/v1/planning/step-out-plans/${planId.value}/steps/${step.stepId}`);
+        await deleteStepApi(planId.value, step.stepId);
         steps.value = steps.value.filter(s => s.stepId !== step.stepId);
         toast.add({ severity: 'success', summary: 'Step Deleted', life: 2000 });
     } catch {
@@ -288,7 +283,7 @@ async function generatePackages() {
     if (!planId.value) return;
     generating.value = true;
     try {
-        await apiStore.api.post(`/api/v1/planning/step-out-plans/${planId.value}/generate-work-packages`);
+        await generateWorkPackages(planId.value);
         toast.add({ severity: 'success', summary: 'Work Packages Generated', life: 2500 });
         await load();
     } catch {
@@ -303,7 +298,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get(`/api/v1/planning/step-out-plans/${planId.value}`);
+        const data = await getStepOutPlan(planId.value);
         plan.value = data;
         steps.value = (data.steps ?? []).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
         workPackages.value = data.workPackages ?? [];

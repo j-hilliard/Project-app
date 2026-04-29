@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Scheduling;
 using Stronghold.EnterpriseEstimating.Api.Services;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models.Scheduling;
@@ -100,12 +101,25 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPost("resources")]
-    public async Task<IActionResult> CreateResource([FromBody] Resource resource, CancellationToken ct)
+    public async Task<IActionResult> CreateResource([FromBody] CreateResourceRequest req, CancellationToken ct)
     {
-        resource.CompanyCode = CompanyCode;
-        // Keep Name in sync with First/Last for backward compat
-        if (!string.IsNullOrWhiteSpace(resource.FirstName) || !string.IsNullOrWhiteSpace(resource.LastName))
-            resource.Name = $"{resource.FirstName} {resource.LastName}".Trim();
+        var resource = new Resource
+        {
+            FirstName = req.FirstName,
+            LastName = req.LastName,
+            Name = $"{req.FirstName} {req.LastName}".Trim(),
+            EmployeeId = req.EmployeeId,
+            CraftCode = req.CraftCode,
+            Region = req.Region,
+            Branch = req.Branch,
+            EmploymentStatus = req.EmploymentStatus,
+            IsActive = req.IsActive,
+            ShiftEligibility = req.ShiftEligibility,
+            Phone = req.Phone,
+            Email = req.Email,
+            Notes = req.Notes,
+            CompanyCode = CompanyCode,
+        };
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.Resources.Add(resource);
         await db.SaveChangesAsync(ct);
@@ -124,26 +138,24 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPut("resources/{id:int}")]
-    public async Task<IActionResult> UpdateResource(int id, [FromBody] Resource update, CancellationToken ct)
+    public async Task<IActionResult> UpdateResource(int id, [FromBody] UpdateResourceRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var existing = await db.Resources.FirstOrDefaultAsync(r => r.ResourceId == id && r.CompanyCode == CompanyCode, ct);
         if (existing == null) return NotFound();
-        existing.FirstName = update.FirstName;
-        existing.LastName = update.LastName;
-        existing.Name = !string.IsNullOrWhiteSpace(update.FirstName) || !string.IsNullOrWhiteSpace(update.LastName)
-            ? $"{update.FirstName} {update.LastName}".Trim()
-            : update.Name;
-        existing.EmployeeId = update.EmployeeId;
-        existing.CraftCode = update.CraftCode;
-        existing.Region = update.Region;
-        existing.Branch = update.Branch;
-        existing.EmploymentStatus = update.EmploymentStatus;
-        existing.IsActive = update.IsActive;
-        existing.ShiftEligibility = update.ShiftEligibility;
-        existing.Phone = update.Phone;
-        existing.Email = update.Email;
-        existing.Notes = update.Notes;
+        existing.FirstName = req.FirstName;
+        existing.LastName = req.LastName;
+        existing.Name = $"{req.FirstName} {req.LastName}".Trim();
+        existing.EmployeeId = req.EmployeeId;
+        existing.CraftCode = req.CraftCode;
+        existing.Region = req.Region;
+        existing.Branch = req.Branch;
+        existing.EmploymentStatus = req.EmploymentStatus;
+        existing.IsActive = req.IsActive;
+        existing.ShiftEligibility = req.ShiftEligibility;
+        existing.Phone = req.Phone;
+        existing.Email = req.Email;
+        existing.Notes = req.Notes;
         await db.SaveChangesAsync(ct);
         return Ok(existing);
     }
@@ -171,11 +183,17 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPost("certifications")]
-    public async Task<IActionResult> CreateCertification([FromBody] Certification cert, CancellationToken ct)
+    public async Task<IActionResult> CreateCertification([FromBody] CreateCertificationRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        var resource = await db.Resources.FirstOrDefaultAsync(r => r.ResourceId == cert.ResourceId && r.CompanyCode == CompanyCode, ct);
+        var resource = await db.Resources.FirstOrDefaultAsync(r => r.ResourceId == req.ResourceId && r.CompanyCode == CompanyCode, ct);
         if (resource == null) return NotFound();
+        var cert = new Certification
+        {
+            ResourceId = req.ResourceId,
+            Type = req.Type,
+            ExpirationDate = req.ExpirationDate,
+        };
         db.Certifications.Add(cert);
         await db.SaveChangesAsync(ct);
         return Ok(cert);
@@ -213,10 +231,22 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPost("assignments")]
-    public async Task<IActionResult> CreateAssignment([FromBody] Assignment assignment, CancellationToken ct)
+    public async Task<IActionResult> CreateAssignment([FromBody] CreateAssignmentRequest req, CancellationToken ct)
     {
-        assignment.CompanyCode = CompanyCode;
-        assignment.CreatedBy = Username;
+        var assignment = new Assignment
+        {
+            ResourceId = req.ResourceId,
+            JobSourceType = req.JobSourceType,
+            JobSourceId = req.JobSourceId,
+            JobName = req.JobName,
+            CraftCode = req.CraftCode,
+            Start = req.Start,
+            End = req.End,
+            Shift = req.Shift,
+            Status = req.Status,
+            CompanyCode = CompanyCode,
+            CreatedBy = Username,
+        };
 
         var conflicts = await _conflictService.DetectConflictsAsync(
             assignment.ResourceId, assignment.Start, assignment.End,
@@ -245,20 +275,20 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPut("assignments/{id:int}")]
-    public async Task<IActionResult> UpdateAssignment(int id, [FromBody] Assignment update, CancellationToken ct)
+    public async Task<IActionResult> UpdateAssignment(int id, [FromBody] UpdateAssignmentRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var existing = await db.Assignments.FirstOrDefaultAsync(a => a.AssignmentId == id && a.CompanyCode == CompanyCode, ct);
         if (existing == null) return NotFound();
-        existing.ResourceId = update.ResourceId;
-        existing.JobSourceType = update.JobSourceType;
-        existing.JobSourceId = update.JobSourceId;
-        existing.JobName = update.JobName;
-        existing.CraftCode = update.CraftCode;
-        existing.Start = update.Start;
-        existing.End = update.End;
-        existing.Shift = update.Shift;
-        existing.Status = update.Status;
+        existing.ResourceId = req.ResourceId;
+        existing.JobSourceType = req.JobSourceType;
+        existing.JobSourceId = req.JobSourceId;
+        existing.JobName = req.JobName;
+        existing.CraftCode = req.CraftCode;
+        existing.Start = req.Start;
+        existing.End = req.End;
+        existing.Shift = req.Shift;
+        existing.Status = req.Status;
         await db.SaveChangesAsync(ct);
 
         var conflicts = await _conflictService.DetectConflictsAsync(
@@ -325,8 +355,15 @@ public class SchedulingController : ControllerBase
 
     // ── Availability Blocks ───────────────────────────────────────────────
     [HttpPost("availability-blocks")]
-    public async Task<IActionResult> CreateAvailabilityBlock([FromBody] AvailabilityBlock block, CancellationToken ct)
+    public async Task<IActionResult> CreateAvailabilityBlock([FromBody] CreateAvailabilityBlockRequest req, CancellationToken ct)
     {
+        var block = new AvailabilityBlock
+        {
+            ResourceId = req.ResourceId,
+            Start = req.Start,
+            End = req.End,
+            Reason = req.Reason,
+        };
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.AvailabilityBlocks.Add(block);
         await db.SaveChangesAsync(ct);

@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stronghold.EnterpriseEstimating.Api.Contracts.Common;
+using Stronghold.EnterpriseEstimating.Api.Contracts.WorkOrders;
+using Stronghold.EnterpriseEstimating.Api.Services.WorkOrders;
 using Stronghold.EnterpriseEstimating.Data;
 using Stronghold.EnterpriseEstimating.Data.Models.Planning;
 
@@ -56,79 +59,61 @@ public class WorkOrderController : ControllerBase
         var wo = await db.WorkOrders
             .FirstOrDefaultAsync(w => w.WorkOrderId == id && w.CompanyCode == CompanyCode, ct);
         if (wo == null) return NotFound();
-
-        var approvedFcoTotal = await db.FcoDocuments
-            .Where(f => f.LinkedWorkOrderId == id && f.CompanyCode == CompanyCode && f.Status == "Approved")
-            .SumAsync(f => f.TotalFcoAmount, ct);
-
-        var actuals = await db.ActualEntries
-            .Where(a => a.WorkOrderId == id && a.CompanyCode == CompanyCode && a.IsConfirmed)
-            .ToListAsync(ct);
-
-        var actualCostToDate = actuals.Sum(a => a.CostAmount);
-        var billableToDate = actuals.Sum(a => a.BillableAmount);
-        var billedToDate = actuals.Sum(a => a.BilledAmount);
-
-        var revisedAuthorized = wo.AuthorizedValue + approvedFcoTotal;
-        var unbilledEntitlement = billableToDate - billedToDate;
-        var remainingAuthorized = revisedAuthorized - actualCostToDate;
-        var margin = billableToDate - actualCostToDate;
-        var marginPct = billableToDate > 0 ? Math.Round(margin / billableToDate * 100, 1) : 0m;
-
-        return Ok(new
-        {
-            workOrderId = id,
-            authorizedValue = wo.AuthorizedValue,
-            approvedFcoTotal,
-            revisedAuthorized,
-            actualCostToDate,
-            billableToDate,
-            billedToDate,
-            unbilledEntitlement,
-            remainingAuthorized,
-            margin,
-            marginPct,
-        });
+        var result = await WorkOrderFinancialService.CalculateAsync(db, wo, CompanyCode, ct);
+        return Ok(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] WorkOrder wo, CancellationToken ct)
+    public async Task<IActionResult> Create([FromBody] CreateWorkOrderRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
         var project = await db.Projects
-            .FirstOrDefaultAsync(p => p.ProjectId == wo.ProjectId && p.CompanyCode == CompanyCode, ct);
+            .FirstOrDefaultAsync(p => p.ProjectId == req.ProjectId && p.CompanyCode == CompanyCode, ct);
         if (project == null) return BadRequest("Project not found.");
 
         var ca = await db.CommercialAuthorizations
-            .FirstOrDefaultAsync(c => c.CommercialAuthorizationId == wo.CommercialAuthorizationId
+            .FirstOrDefaultAsync(c => c.CommercialAuthorizationId == req.CommercialAuthorizationId
                                    && c.CompanyCode == CompanyCode, ct);
         if (ca == null) return BadRequest("CommercialAuthorization not found.");
 
-        wo.CompanyCode = CompanyCode;
-        wo.CreatedBy = Username;
-        wo.CreatedAt = DateTimeOffset.UtcNow;
-        wo.UpdatedAt = DateTimeOffset.UtcNow;
+        var wo = new WorkOrder
+        {
+            ProjectId = req.ProjectId,
+            CommercialAuthorizationId = req.CommercialAuthorizationId,
+            EstimateId = req.EstimateId,
+            WorkOrderNumber = req.WorkOrderNumber,
+            Title = req.Title,
+            Description = req.Description,
+            Scope = req.Scope,
+            AuthorizedValue = req.AuthorizedValue,
+            PlannedStart = req.PlannedStart,
+            PlannedEnd = req.PlannedEnd,
+            CompanyCode = CompanyCode,
+            CreatedBy = Username,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
         db.WorkOrders.Add(wo);
         await db.SaveChangesAsync(ct);
         return CreatedAtAction(nameof(Get), new { id = wo.WorkOrderId }, wo);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] WorkOrder update, CancellationToken ct)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkOrderRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var wo = await db.WorkOrders
             .FirstOrDefaultAsync(w => w.WorkOrderId == id && w.CompanyCode == CompanyCode, ct);
         if (wo == null) return NotFound();
 
-        wo.Title = update.Title;
-        wo.Description = update.Description;
-        wo.Scope = update.Scope;
-        wo.AuthorizedValue = update.AuthorizedValue;
-        wo.PlannedStart = update.PlannedStart;
-        wo.PlannedEnd = update.PlannedEnd;
-        wo.ForecastEnd = update.ForecastEnd;
+        wo.Title = req.Title;
+        wo.Description = req.Description;
+        wo.Scope = req.Scope;
+        wo.AuthorizedValue = req.AuthorizedValue;
+        wo.PlannedStart = req.PlannedStart;
+        wo.PlannedEnd = req.PlannedEnd;
+        wo.ForecastEnd = req.ForecastEnd;
         wo.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return Ok(wo);

@@ -79,11 +79,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { workOrderStatusSeverity as statusSeverity } from '@/ui';
 
 const router = useRouter();
-
-const apiStore = useApiStore();
+const { listWorkOrders } = usePlanningService();
+const { fmtDate, fmtCurrency } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -113,34 +115,11 @@ const filtered = computed(() => {
     return list;
 });
 
-function statusSeverity(status: string): string {
-    switch (status) {
-        case 'Released': return 'success';
-        case 'InProgress': return 'info';
-        case 'Draft': return 'secondary';
-        case 'Complete': return 'contrast';
-        case 'Closed': return 'contrast';
-        case 'Cancelled': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-function fmtDate(d: string | null | undefined): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function fmtCurrency(v: number | null | undefined): string {
-    if (v == null || v === 0) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-}
-
 async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/work-orders');
-        workOrders.value = data;
+        workOrders.value = await listWorkOrders();
     } catch {
         error.value = true;
     } finally {

@@ -70,12 +70,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import { useApiStore } from '@/stores/apiStore';
+import { usePlanningService } from '../services/usePlanningService';
+import { useFormatters } from '@/ui';
+import { workPackageStatusSeverity as statusSeverity } from '@/ui';
 
 const router = useRouter();
-
-const apiStore = useApiStore();
 const toast = useToast();
+const { listWorkPackages, updateWorkPackage } = usePlanningService();
+const { fmtDate } = useFormatters();
 
 const loading = ref(false);
 const error = ref(false);
@@ -103,24 +105,10 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed */ }
 
-function statusSeverity(s: string) {
-    if (s === 'Active') return 'success';
-    if (s === 'Complete') return 'info';
-    return 'warning';
-}
-
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
 async function toggleReady(pkg: any) {
     const newVal = !pkg.readyForScheduling;
     try {
-        await apiStore.api.put(`/api/v1/planning/work-packages/${pkg.packageId}`, {
-            ...pkg,
-            readyForScheduling: newVal,
-        });
+        await updateWorkPackage(pkg.packageId, { ...pkg, readyForScheduling: newVal });
         pkg.readyForScheduling = newVal;
         toast.add({
             severity: 'success',
@@ -136,8 +124,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.get('/api/v1/planning/work-packages');
-        packages.value = data;
+        packages.value = await listWorkPackages();
     } catch {
         error.value = true;
     } finally {

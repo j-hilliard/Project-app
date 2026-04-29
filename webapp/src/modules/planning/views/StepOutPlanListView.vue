@@ -24,12 +24,10 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="planId" size="small"
-            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
-            <Column field="name" header="Plan Name" sortable>
-                <template #body="{ data }">
-                    <a class="plan-link" @click="router.push(`/planning/step-out-plans/${data.planId}`)">{{ data.name }}</a>
-                </template>
-            </Column>
+            class="ent-grid ent-grid-clickable"
+            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]"
+            @row-click="(e) => router.push(`/planning/step-out-plans/${e.data.planId}`)">
+            <Column field="name" header="Plan Name" sortable />
             <Column field="sourceType" header="Source" style="width:110px">
                 <template #body="{ data }">
                     <Tag v-if="data.sourceType" :value="data.sourceType" severity="secondary" />
@@ -54,10 +52,9 @@
                     <span class="step-count">{{ data.steps?.length ?? 0 }}</span>
                 </template>
             </Column>
-            <Column header="" style="width:90px">
+            <Column header="" style="width:50px">
                 <template #body="{ data }">
-                    <Button icon="pi pi-arrow-right" text size="small" @click="router.push(`/planning/step-out-plans/${data.planId}`)" />
-                    <Button icon="pi pi-trash" text severity="danger" size="small" @click="confirmDelete(data)" />
+                    <Button icon="pi pi-trash" text severity="danger" size="small" @click.stop="confirmDelete(data)" />
                 </template>
             </Column>
             <template #empty>
@@ -232,8 +229,6 @@ onMounted(load);
 .planning-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .planning-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
 .planning-empty-cell { color: var(--text-color-secondary); font-size: 0.85rem; }
-.plan-link { color: var(--primary-color); cursor: pointer; font-weight: 500; text-decoration: none; }
-.plan-link:hover { text-decoration: underline; }
 .step-count { font-size: 0.85rem; color: var(--text-color-secondary); }
 .form-grid { display: flex; flex-direction: column; gap: 1rem; }
 .form-field { display: flex; flex-direction: column; gap: 0.35rem; }

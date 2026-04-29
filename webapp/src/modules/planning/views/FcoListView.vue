@@ -24,7 +24,9 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="fcoDocumentId" size="small"
-            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
+            class="ent-grid ent-grid-clickable"
+            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]"
+            @row-click="(e) => openDetail(e.data)">
             <Column field="fcoNumber" header="FCO #" style="width:100px" sortable />
             <Column field="title" header="Title" sortable />
             <Column field="date" header="Date" style="width:110px">
@@ -48,10 +50,9 @@
                     <Tag :value="data.status" :severity="statusSeverity(data.status)" />
                 </template>
             </Column>
-            <Column header="" style="width:120px">
+            <Column header="" style="width:60px">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye" text size="small" @click="openDetail(data)" />
-                    <Button icon="pi pi-file" text size="small" title="Generate Document" @click="generateDoc(data)" />
+                    <Button icon="pi pi-file" text size="small" title="Generate Document" @click.stop="generateDoc(data)" />
                 </template>
             </Column>
             <template #empty>

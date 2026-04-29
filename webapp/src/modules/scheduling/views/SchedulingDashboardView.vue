@@ -93,7 +93,7 @@
                 <h2>Active Demand</h2>
                 <Button label="View All" text size="small" @click="router.push('/scheduling/jobs')" />
             </div>
-            <DataTable :value="recentJobs" :loading="loading" stripedRows size="small">
+            <DataTable :value="recentJobs" :loading="loading" stripedRows size="small" class="ent-grid">
                 <Column field="sourceType" header="Source" style="width:110px">
                     <template #body="{ data }">
                         <Tag :value="data.sourceType" :severity="sourceTagSeverity(data.sourceType)" />

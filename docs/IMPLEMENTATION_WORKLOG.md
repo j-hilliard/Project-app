@@ -120,6 +120,43 @@
 
 ---
 
+## 2026-04-29 — Batch 2: PM + Scheduling Density Sweep (Phase 1)
+
+**Estimating impact: NO**
+
+**What changed:** Applied `ent-grid` / `ent-grid-clickable` standard to all planning and scheduling DataTables that were missing it. Converted link-in-cell navigation patterns to DataTable `@row-click` where applicable.
+
+**Files changed:**
+- `webapp/src/modules/planning/views/StepOutPlanListView.vue` — added `ent-grid ent-grid-clickable`, `@row-click` for plan navigation; removed `<a class="plan-link">` column body; removed redundant arrow-right Button; added `@click.stop` to trash button; removed unused `.plan-link` CSS
+- `webapp/src/modules/planning/views/FcoListView.vue` — added `ent-grid ent-grid-clickable`, `@row-click` → `openDetail()`; removed redundant `pi-eye` Button; added `@click.stop` to `pi-file` (Generate Document) Button
+- `webapp/src/modules/scheduling/views/SchedulingDashboardView.vue` — added `ent-grid` to Active Demand DataTable
+- `webapp/src/modules/planning/views/StepOutPlanFormView.vue` — added `ent-grid` to Steps DataTable; added `@click.stop` to pencil/trash step action buttons; added `ent-grid ent-grid-clickable` + `@row-click` to Generated Work Packages DataTable (navigates to `/planning/work-packages/:id`)
+
+**CoverageView.vue — D-04 VOID:** Confirmed view uses custom `CraftCoverageBar` components, not a DataTable. No `ent-grid` applicable. Single-click/dblclick interaction pattern is correct for this visualization view. No change made.
+
+**Build result:** `npm run build:dev` — PASS (✓ built in 5.47s, zero errors)
+
+**Defects addressed:**
+- D-01 StepOutPlanListView — FIXED PENDING REVIEW
+- D-02 FcoListView — FIXED PENDING REVIEW
+- D-03 SchedulingDashboardView Active Demand — FIXED PENDING REVIEW
+- D-04 CoverageView — VOID (no DataTable)
+- D-05 StepOutPlanFormView Steps + WP tables — FIXED PENDING REVIEW
+- DD-01 StepOutPlanListView link-in-cell — FIXED PENDING REVIEW
+- DD-02 FcoListView pi-eye dead button — FIXED PENDING REVIEW
+
+**Remaining open defects (Phase 2+):**
+- DD-03 ProjectDetailView WO tab link-in-cell
+- DD-04 WorkOrderDetailView step-out plans tab plan-link
+- DD-05 JobsBoardView button-in-cell
+- DD-06 AssignmentsView button-in-cell
+- DD-07 RollOffView button-in-cell
+- Numbering: PRJ-DEMO-*, WO-DEMO-*, FCO-DEMO-* (Phase 3)
+
+**Next:** Codex verify Batch 2 on all 5 routes, then Phase 2 dead-end fixes on approval.
+
+---
+
 ## 2026-04-28 14:56:29 -05:00 — Codex Doc Cleanup: Canonical Developer Handoff
 
 **What changed:** Completed the developer handoff cleanup after Joseph explicitly authorized Codex to perform doc cleanup.

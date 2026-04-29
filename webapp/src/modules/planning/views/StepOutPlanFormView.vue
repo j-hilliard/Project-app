@@ -57,7 +57,7 @@
                 <Button label="Add Step" icon="pi pi-plus" size="small" @click="openAddStep" />
             </div>
 
-            <DataTable :value="steps" :loading="loading" stripedRows dataKey="stepId" size="small">
+            <DataTable :value="steps" :loading="loading" stripedRows dataKey="stepId" size="small" class="ent-grid">
                 <Column field="stepCode" header="Code" style="width:80px" sortable />
                 <Column field="title" header="Title" sortable />
                 <Column field="craftCode" header="Craft" style="width:90px">
@@ -84,8 +84,8 @@
                 </Column>
                 <Column header="" style="width:90px">
                     <template #body="{ data }">
-                        <Button icon="pi pi-pencil" text size="small" @click="openEditStep(data)" />
-                        <Button icon="pi pi-trash" text severity="danger" size="small" @click="deleteStep(data)" />
+                        <Button icon="pi pi-pencil" text size="small" @click.stop="openEditStep(data)" />
+                        <Button icon="pi pi-trash" text severity="danger" size="small" @click.stop="deleteStep(data)" />
                     </template>
                 </Column>
                 <template #empty>
@@ -100,7 +100,9 @@
                 <h2>Generated Work Packages</h2>
                 <Button label="View All" text size="small" @click="router.push('/planning/work-packages')" />
             </div>
-            <DataTable :value="workPackages" stripedRows dataKey="packageId" size="small">
+            <DataTable :value="workPackages" stripedRows dataKey="packageId" size="small"
+                class="ent-grid ent-grid-clickable"
+                @row-click="(e) => router.push(`/planning/work-packages/${e.data.packageId}`)">
                 <Column field="title" header="Title" />
                 <Column field="craftCode" header="Craft" style="width:90px">
                     <template #body="{ data }">

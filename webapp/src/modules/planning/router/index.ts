@@ -55,6 +55,12 @@ export const planningRoutes = [
         component: () => import('@/modules/planning/views/WorkPackageListView.vue'),
         meta: { title: 'Work Packages' },
     },
+    {
+        path: 'work-packages/:id',
+        name: 'work-package-detail',
+        component: () => import('@/modules/planning/views/WorkPackageDetailView.vue'),
+        meta: { title: 'Work Package' },
+    },
     // ── FCO / Change Orders (existing) ────────────────────────────────────
     {
         path: 'fco',

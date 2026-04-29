@@ -92,6 +92,64 @@
                 <div class="plan-scope-text">{{ wo.scope }}</div>
             </div>
 
+            <!-- Financial Control Panel -->
+            <div class="plan-fin-card" v-if="financials">
+                <div class="plan-fin-header">
+                    <span class="plan-fin-title">Financial Control</span>
+                    <span class="plan-fin-badge">Internal Use Only</span>
+                </div>
+                <div class="plan-fin-grid">
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Authorized Value</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.authorizedValue) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Approved FCOs</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.approvedFcoTotal) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Revised Authorized</span>
+                        <span class="plan-fin-value plan-fin-value-accent">{{ fmtCurrency(financials.revisedAuthorized) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Remaining Authorized</span>
+                        <span class="plan-fin-value" :class="financials.remainingAuthorized < 0 ? 'plan-fin-value-danger' : ''">
+                            {{ fmtCurrency(financials.remainingAuthorized) }}
+                        </span>
+                    </div>
+                    <div class="plan-fin-divider" />
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Actual Cost to Date</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.actualCostToDate) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Billable to Date</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.billableToDate) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Billed to Date</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.billedToDate) }}</span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Unbilled Entitlement</span>
+                        <span class="plan-fin-value">{{ fmtCurrency(financials.unbilledEntitlement) }}</span>
+                    </div>
+                    <div class="plan-fin-divider" />
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Margin</span>
+                        <span class="plan-fin-value" :class="financials.margin < 0 ? 'plan-fin-value-danger' : 'plan-fin-value-green'">
+                            {{ fmtCurrency(financials.margin) }}
+                        </span>
+                    </div>
+                    <div class="plan-fin-item">
+                        <span class="plan-fin-label">Margin %</span>
+                        <span class="plan-fin-value plan-fin-value-lg" :class="financials.marginPct < 0 ? 'plan-fin-value-danger' : 'plan-fin-value-green'">
+                            {{ financials.marginPct }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tabs -->
             <TabView v-model:activeIndex="activeTab">
 
@@ -129,8 +187,9 @@
                     <div v-if="!wo.workPackages?.length" class="plan-empty">
                         No work packages attached to this work order.
                     </div>
-                    <DataTable v-else :value="wo.workPackages" size="small" class="ent-grid" stripedRows
-                        dataKey="workPackageId">
+                    <DataTable v-else :value="wo.workPackages" size="small" class="ent-grid ent-grid-clickable" stripedRows
+                        dataKey="packageId"
+                        @row-click="(e) => router.push(`/planning/work-packages/${e.data.packageId}`)">
                         <Column field="packageNumber" header="WP #" style="width:140px">
                             <template #body="{ data }">
                                 <span class="plan-number">{{ data.packageNumber }}</span>
@@ -191,6 +250,7 @@ const fromProjectId = route.query.projectId ? Number(route.query.projectId) : nu
 const loading = ref(false);
 const error = ref(false);
 const wo = ref<any>(null);
+const financials = ref<any>(null);
 const activeTab = ref(0);
 
 const releaseLoading = ref(false);
@@ -290,10 +350,20 @@ async function load() {
     try {
         const { data } = await apiStore.api.get(`/api/v1/work-orders/${woId}`);
         wo.value = data;
+        loadFinancials();
     } catch {
         error.value = true;
     } finally {
         loading.value = false;
+    }
+}
+
+async function loadFinancials() {
+    try {
+        const { data } = await apiStore.api.get(`/api/v1/work-orders/${woId}/financials`);
+        financials.value = data;
+    } catch {
+        // financials panel stays hidden on error
     }
 }
 
@@ -544,5 +614,91 @@ onMounted(load);
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-color);
+}
+
+/* Financial Control Panel */
+.plan-fin-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+}
+
+.plan-fin-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.plan-fin-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color-secondary);
+}
+
+.plan-fin-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    border-radius: 4px;
+    padding: 1px 7px;
+}
+
+.plan-fin-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem 2rem;
+    align-items: flex-start;
+}
+
+.plan-fin-divider {
+    width: 100%;
+    height: 0;
+    border-top: 1px solid var(--surface-border);
+}
+
+.plan-fin-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 120px;
+}
+
+.plan-fin-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color-secondary);
+    font-weight: 600;
+}
+
+.plan-fin-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.plan-fin-value-lg {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.plan-fin-value-accent {
+    color: var(--primary-color);
+}
+
+.plan-fin-value-green {
+    color: var(--green-600, #16a34a);
+}
+
+.plan-fin-value-danger {
+    color: var(--red-600, #dc2626);
 }
 </style>

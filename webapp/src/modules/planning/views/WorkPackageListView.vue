@@ -23,7 +23,9 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="packageId" size="small"
-            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
+            class="ent-grid ent-grid-clickable"
+            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]"
+            @row-click="(e) => router.push(`/planning/work-packages/${e.data.packageId}`)">
             <Column field="title" header="Title" sortable />
             <Column field="craftCode" header="Craft" style="width:90px">
                 <template #body="{ data }">
@@ -66,8 +68,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useApiStore } from '@/stores/apiStore';
+
+const router = useRouter();
 
 const apiStore = useApiStore();
 const toast = useToast();

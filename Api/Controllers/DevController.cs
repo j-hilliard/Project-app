@@ -66,7 +66,7 @@ public class DevController : ControllerBase
         if (includePm)
         {
             var demoEstIds = await db.Estimates
-                .Where(e => e.EstimateNumber.StartsWith("PM-DEMO-"))
+                .Where(e => db.Projects.Any(p => p.EstimateId == e.EstimateId && p.ProjectNumber.StartsWith("PRJ-DEMO-")))
                 .Select(e => e.EstimateId).ToListAsync();
             var demoWoIds = await db.WorkOrders
                 .Where(wo => wo.WorkOrderNumber.StartsWith("WO-DEMO-"))
@@ -2346,7 +2346,7 @@ public class DevController : ControllerBase
 
         var estA = new Estimate
         {
-            CompanyCode="CSL", EstimateNumber="PM-DEMO-A",
+            CompanyCode="CSL", EstimateNumber="26-0050-SHELL",
             Name="Shell Deer Park - Unit 4 Piping Repair",
             Client="Shell Oil Company", ClientCode="SHELL", MsaNumber="MSA-SHELL-2024-01",
             JobType="Maintenance", Branch="Industrial", City="Deer Park", State="TX",
@@ -2582,7 +2582,7 @@ public class DevController : ControllerBase
 
         var estB = new Estimate
         {
-            CompanyCode="CSL", EstimateNumber="PM-DEMO-B",
+            CompanyCode="CSL", EstimateNumber="26-0051-CHEN",
             Name="Cheniere LNG - Terminal Expansion Piping",
             Client="Cheniere Energy", ClientCode="CHEN",
             JobType="Construction", Branch="Industrial", City="Sabine Pass", State="TX",
@@ -2672,7 +2672,7 @@ public class DevController : ControllerBase
 
         var estC = new Estimate
         {
-            CompanyCode="CSL", EstimateNumber="PM-DEMO-C",
+            CompanyCode="CSL", EstimateNumber="26-0052-BP",
             Name="BP Texas City — Exchanger Bundle Pull & Repair",
             Client="British Petroleum", ClientCode="BP", MsaNumber="MSA-BP-2024-01",
             JobType="Turnaround", Branch="Industrial", City="Texas City", State="TX",
@@ -2837,7 +2837,7 @@ public class DevController : ControllerBase
 
         var estD = new Estimate
         {
-            CompanyCode="CSL", EstimateNumber="PM-DEMO-D",
+            CompanyCode="CSL", EstimateNumber="26-0053-VLO",
             Name="Valero Port Arthur — Unit 8 Turnaround Piping",
             Client="Valero Energy", ClientCode="VLO",
             JobType="Turnaround", Branch="Industrial", City="Port Arthur", State="TX",

@@ -49,6 +49,48 @@ public class WorkOrderController : ControllerBase
         return wo == null ? NotFound() : Ok(wo);
     }
 
+    [HttpGet("{id:int}/financials")]
+    public async Task<IActionResult> GetFinancials(int id, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var wo = await db.WorkOrders
+            .FirstOrDefaultAsync(w => w.WorkOrderId == id && w.CompanyCode == CompanyCode, ct);
+        if (wo == null) return NotFound();
+
+        var approvedFcoTotal = await db.FcoDocuments
+            .Where(f => f.LinkedWorkOrderId == id && f.CompanyCode == CompanyCode && f.Status == "Approved")
+            .SumAsync(f => f.TotalFcoAmount, ct);
+
+        var actuals = await db.ActualEntries
+            .Where(a => a.WorkOrderId == id && a.CompanyCode == CompanyCode && a.IsConfirmed)
+            .ToListAsync(ct);
+
+        var actualCostToDate = actuals.Sum(a => a.CostAmount);
+        var billableToDate = actuals.Sum(a => a.BillableAmount);
+        var billedToDate = actuals.Sum(a => a.BilledAmount);
+
+        var revisedAuthorized = wo.AuthorizedValue + approvedFcoTotal;
+        var unbilledEntitlement = billableToDate - billedToDate;
+        var remainingAuthorized = revisedAuthorized - actualCostToDate;
+        var margin = billableToDate - actualCostToDate;
+        var marginPct = billableToDate > 0 ? Math.Round(margin / billableToDate * 100, 1) : 0m;
+
+        return Ok(new
+        {
+            workOrderId = id,
+            authorizedValue = wo.AuthorizedValue,
+            approvedFcoTotal,
+            revisedAuthorized,
+            actualCostToDate,
+            billableToDate,
+            billedToDate,
+            unbilledEntitlement,
+            remainingAuthorized,
+            margin,
+            marginPct,
+        });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] WorkOrder wo, CancellationToken ct)
     {

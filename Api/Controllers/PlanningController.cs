@@ -185,6 +185,72 @@ public class PlanningController : ControllerBase
         return Ok(await q.OrderByDescending(wp => wp.PackageId).ToListAsync(ct));
     }
 
+    [HttpGet("work-packages/{id:int}")]
+    public async Task<IActionResult> GetWorkPackage(int id, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var wp = await db.WorkPackages
+            .Include(w => w.Plan)
+            .FirstOrDefaultAsync(w => w.PackageId == id && w.CompanyCode == CompanyCode, ct);
+        if (wp == null) return NotFound();
+
+        // Resolve WO and Project nav info (labels only — no financial fields exposed)
+        string? workOrderNumber = null, workOrderTitle = null, workOrderStatus = null;
+        string? projectNumber = null, projectName = null;
+        int? projectId = null;
+
+        if (wp.WorkOrderId.HasValue)
+        {
+            var wo = await db.WorkOrders
+                .Include(w => w.Project)
+                .FirstOrDefaultAsync(w => w.WorkOrderId == wp.WorkOrderId.Value && w.CompanyCode == CompanyCode, ct);
+            if (wo != null)
+            {
+                workOrderNumber = wo.WorkOrderNumber;
+                workOrderTitle = wo.Title;
+                workOrderStatus = wo.Status;
+                projectId = wo.ProjectId;
+                projectNumber = wo.Project?.ProjectNumber;
+                projectName = wo.Project?.Name;
+            }
+        }
+
+        return Ok(new
+        {
+            wp.PackageId,
+            wp.CompanyCode,
+            wp.PlanId,
+            planName = wp.Plan?.Name,
+            wp.WorkOrderId,
+            workOrderNumber,
+            workOrderTitle,
+            workOrderStatus,
+            projectId,
+            projectNumber,
+            projectName,
+            wp.SourceType,
+            wp.SourceId,
+            wp.Title,
+            wp.CraftCode,
+            wp.RequiredPeople,
+            wp.PlannedStart,
+            wp.PlannedEnd,
+            wp.Status,
+            wp.ReadyForScheduling,
+            wp.Area,
+            wp.Location,
+            wp.PermitRequired,
+            wp.PermitNumber,
+            wp.PermitStatus,
+            wp.JsaRequired,
+            wp.JsaStatus,
+            wp.Notes,
+            wp.CreatedBy,
+            wp.CreatedAt,
+            wp.UpdatedAt,
+        });
+    }
+
     [HttpPut("work-packages/{id:int}")]
     public async Task<IActionResult> UpdateWorkPackage(int id, [FromBody] WorkPackage update, CancellationToken ct)
     {
@@ -198,6 +264,13 @@ public class PlanningController : ControllerBase
         wp.PlannedEnd = update.PlannedEnd;
         wp.Status = update.Status;
         wp.ReadyForScheduling = update.ReadyForScheduling;
+        wp.Area = update.Area;
+        wp.Location = update.Location;
+        wp.PermitRequired = update.PermitRequired;
+        wp.PermitNumber = update.PermitNumber;
+        wp.PermitStatus = update.PermitStatus;
+        wp.JsaRequired = update.JsaRequired;
+        wp.JsaStatus = update.JsaStatus;
         wp.Notes = update.Notes;
         wp.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);

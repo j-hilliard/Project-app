@@ -26,6 +26,19 @@ public class WorkPackage
     public string Status { get; set; } = "Draft";
     public bool ReadyForScheduling { get; set; } = false;
 
+    // Location context
+    public string? Area { get; set; }
+    public string? Location { get; set; }
+
+    // Permit / JSA readiness (field start gate)
+    public bool PermitRequired { get; set; } = false;
+    public string? PermitNumber { get; set; }
+    // PermitStatus: NotRequired, Pending, Issued, Expired
+    public string? PermitStatus { get; set; }
+    public bool JsaRequired { get; set; } = false;
+    // JsaStatus: NotRequired, Pending, Approved, Expired
+    public string? JsaStatus { get; set; }
+
     public string? Notes { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;

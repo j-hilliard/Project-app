@@ -5,8 +5,8 @@ import { fileURLToPath, URL } from 'node:url';
 import Components from 'unplugin-vue-components/vite';
 import { PrimeVueResolver } from 'unplugin-vue-components/resolvers';
 
-const FRONTEND_PORT = 7210;
-const API_PORT = 7211;
+const FRONTEND_PORT = 7310;
+const API_PORT = 7311;
 
 function strongholdPortGuard() {
     return {

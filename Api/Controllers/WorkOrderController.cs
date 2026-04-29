@@ -100,10 +100,37 @@ public class WorkOrderController : ControllerBase
             .Include(w => w.CommercialAuthorization)
             .FirstOrDefaultAsync(w => w.WorkOrderId == id && w.CompanyCode == CompanyCode, ct);
         if (wo == null) return NotFound();
-        if (wo.Status != "Draft") return BadRequest($"WorkOrder status is '{wo.Status}' — only Draft can be Released.");
+        if (wo.Status != "Draft")
+            return UnprocessableEntity(new { code = "InvalidStatus", message = $"WorkOrder status is '{wo.Status}' — only Draft can be Released." });
 
+        // Gate 1: CommercialAuthorization must be Active
         if (wo.CommercialAuthorization?.Status != "Active")
-            return BadRequest("CommercialAuthorization must be Active to release a WorkOrder.");
+            return UnprocessableEntity(new { code = "CommAuthNotActive", message = "CommercialAuthorization must be Active to release a WorkOrder." });
+
+        // Gate 2: Estimate must be Awarded
+        var estimateAwarded = await db.Estimates
+            .AnyAsync(e => e.EstimateId == wo.EstimateId && e.Status == "Awarded" && e.CompanyCode == CompanyCode, ct);
+        if (!estimateAwarded)
+            return UnprocessableEntity(new { code = "EstimateNotAwarded", message = "The linked Estimate must be Awarded to release a WorkOrder." });
+
+        // Gate 3: AuthorizedValue must be set
+        if (wo.AuthorizedValue <= 0)
+            return UnprocessableEntity(new { code = "AuthorizedValueRequired", message = "WorkOrder AuthorizedValue must be greater than zero before release." });
+
+        // Gate 4: Sum of active/released WOs on same CommAuth must not exceed CommAuth.AuthorizedValue
+        var commAuthValue = wo.CommercialAuthorization.AuthorizedValue;
+        var alreadyAllocated = await db.WorkOrders
+            .Where(w => w.CommercialAuthorizationId == wo.CommercialAuthorizationId
+                     && w.WorkOrderId != id
+                     && w.CompanyCode == CompanyCode
+                     && (w.Status == "Released" || w.Status == "InProgress" || w.Status == "Complete"))
+            .SumAsync(w => w.AuthorizedValue, ct);
+        if (alreadyAllocated + wo.AuthorizedValue > commAuthValue)
+            return UnprocessableEntity(new
+            {
+                code = "AuthorizedValueExceeded",
+                message = $"Releasing this WorkOrder (${wo.AuthorizedValue:N2}) would exceed the CommercialAuthorization authorized value of ${commAuthValue:N2}. Already allocated: ${alreadyAllocated:N2}."
+            });
 
         wo.Status = "Released";
         wo.ReleasedBy = Username;

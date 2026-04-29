@@ -58,11 +58,25 @@ export const apps = {
 
     planning: {
         baseSlug: 'planning',
-        name: 'Field Planning',
-        description: 'Step-out plans, work packages, FCOs, and execution sequencing',
+        name: 'Field Planning & PM',
+        description: 'Projects, work orders, and PM lifecycle management',
         icon: 'pi pi-sitemap',
         menu: {
             user: [
+                {
+                    label: 'Projects',
+                    icon: 'pi pi-fw pi-briefcase',
+                    items: [
+                        { label: 'All Projects', icon: 'pi pi-fw pi-list', to: '/planning/projects' },
+                    ],
+                },
+                {
+                    label: 'Work Orders',
+                    icon: 'pi pi-fw pi-file',
+                    items: [
+                        { label: 'Work Orders', icon: 'pi pi-fw pi-list', to: '/planning/work-orders' },
+                    ],
+                },
                 {
                     label: 'Plans',
                     icon: 'pi pi-fw pi-sitemap',
@@ -72,16 +86,10 @@ export const apps = {
                     ],
                 },
                 {
-                    label: 'Work Packages',
+                    label: 'Work & Change',
                     icon: 'pi pi-fw pi-box',
                     items: [
-                        { label: 'Work Package Log', icon: 'pi pi-fw pi-list', to: '/planning/work-packages' },
-                    ],
-                },
-                {
-                    label: 'Change Orders',
-                    icon: 'pi pi-fw pi-file-edit',
-                    items: [
+                        { label: 'Work Packages', icon: 'pi pi-fw pi-box', to: '/planning/work-packages' },
                         { label: 'FCO / Change Orders', icon: 'pi pi-fw pi-file-edit', to: '/planning/fco' },
                     ],
                 },

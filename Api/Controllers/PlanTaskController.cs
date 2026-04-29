@@ -135,11 +135,25 @@ public class PlanTaskController : ControllerBase
     }
 
     [HttpPatch("{id:int}/status")]
-    public async Task<IActionResult> SetStatus(int id, [FromBody] StatusUpdateRequest req, CancellationToken ct)
+    public async Task<IActionResult> SetStatus(int id, [FromBody] TaskStatusRequest req, CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var task = await db.PlanTasks.FirstOrDefaultAsync(t => t.TaskId == id, ct);
         if (task == null) return NotFound();
+
+        // Soft gate: warn if moving to InProgress with no estimate link, unless caller confirms bypass
+        if (req.Status == "InProgress" && !req.BypassEstimateLinkWarning)
+        {
+            var hasLink = await db.EstimateTaskLinks
+                .AnyAsync(l => l.TaskId == id && !l.IsArchived, ct);
+            if (!hasLink)
+                return UnprocessableEntity(new
+                {
+                    code = "NoEstimateLink",
+                    warning = true,
+                    message = "This task has no active estimate link. Add an estimate link before activating, or set bypassEstimateLinkWarning=true to proceed anyway."
+                });
+        }
 
         if (req.Status == "InProgress" && task.ActualStart == null) task.ActualStart = DateTime.UtcNow;
         if (req.Status == "Complete" && task.ActualEnd == null) task.ActualEnd = DateTime.UtcNow;
@@ -186,3 +200,4 @@ public class PlanTaskController : ControllerBase
 }
 
 public record ProgressUpdateRequest(decimal PercentComplete, string? Status, DateTime? ForecastEnd, string? Notes);
+public record TaskStatusRequest(string Status, bool BypassEstimateLinkWarning = false);

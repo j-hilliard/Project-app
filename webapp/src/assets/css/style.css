@@ -162,6 +162,14 @@ body {
     height: 20px;
 }
 
+/* Clickable rows */
+.ent-grid-clickable.p-datatable .p-datatable-tbody > tr {
+    cursor: pointer;
+}
+.ent-grid-clickable.p-datatable .p-datatable-tbody > tr:hover td {
+    background: var(--surface-hover) !important;
+}
+
 /* Action buttons: dim until row hover */
 .ent-grid.p-datatable .p-datatable-tbody > tr .row-actions {
     display: flex;

@@ -74,15 +74,24 @@ public class ProjectController : ControllerBase
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
-        // Gate: CommAuth must be Active
+        // Gate 1: Estimate must be Awarded
+        var estimate = await db.Estimates
+            .FirstOrDefaultAsync(e => e.EstimateId == project.EstimateId && e.CompanyCode == CompanyCode, ct);
+        if (estimate == null)
+            return UnprocessableEntity(new { code = "EstimateNotFound", message = "Estimate not found." });
+        if (estimate.Status != "Awarded")
+            return UnprocessableEntity(new { code = "EstimateNotAwarded", message = "Estimate must be Awarded before creating a Project." });
+
+        // Gate 2: CommercialAuthorization must be Active
         if (project.CommercialAuthorizationId.HasValue)
         {
-            var caActive = await db.CommercialAuthorizations
-                .AnyAsync(ca => ca.CommercialAuthorizationId == project.CommercialAuthorizationId
-                             && ca.Status == "Active"
-                             && ca.CompanyCode == CompanyCode, ct);
-            if (!caActive)
-                return BadRequest("CommercialAuthorization must be Active to create a Project.");
+            var ca = await db.CommercialAuthorizations
+                .FirstOrDefaultAsync(ca => ca.CommercialAuthorizationId == project.CommercialAuthorizationId
+                                        && ca.CompanyCode == CompanyCode, ct);
+            if (ca == null)
+                return UnprocessableEntity(new { code = "CommAuthNotFound", message = "CommercialAuthorization not found." });
+            if (ca.Status != "Active")
+                return UnprocessableEntity(new { code = "CommAuthNotActive", message = "CommercialAuthorization must be Active to create a Project." });
         }
 
         project.CompanyCode = CompanyCode;

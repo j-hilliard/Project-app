@@ -56,7 +56,7 @@
                 </div>
                 <div v-if="dashboardData.pendingFcoCount > 0"
                     class="portal-signal portal-signal-warn"
-                    @click="router.push('/planning/step-out-plans')">
+                    @click="router.push('/planning/fco')">
                     <i class="pi pi-file-edit" />
                     <div class="portal-signal-body">
                         <span class="portal-signal-count">{{ dashboardData.pendingFcoCount }}</span>
@@ -173,10 +173,8 @@ const appTiles = computed(() => [
         name: apps.planning.name,
         description: apps.planning.description,
         icon: apps.planning.icon,
-        path: '/planning/step-out-plans',
-        stat: dashboardData.value?.pendingFcoCount,
-        statLabel: 'pending FCOs',
-        statClass: dashboardData.value?.pendingFcoCount ? 'portal-stat-warn' : '',
+        path: '/planning/projects',
+        // No stat shown until ScheduleHealthService is implemented
     },
     {
         slug: 'scheduling',

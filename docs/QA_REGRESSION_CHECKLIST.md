@@ -31,6 +31,7 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 | Scheduling | `QA-SCHED` | Scheduling QA Auditor |
 | Actuals / Delta | `QA-ACT` | Planning + Cost QA Auditor |
 | FCO / Change Order | `QA-FCO` | Planning + Document QA Auditor |
+| Project Lifecycle / Stage Gates | `QA-LIFE` | Platform Lifecycle Auditor |
 
 ---
 
@@ -869,6 +870,13 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - Coverage gaps, assignment conflicts, ending-soon, and available-soon logic are not only browser-side calculations.
   - Vue views/stores consume backend/read-model outputs for operational truth and focus on presentation/workflow state.
 
+### QA-PLAT-010: Portal KPI Language Uses Projects At Risk
+- **Lifecycle requirement:** Portal-level risk should surface project execution risk, not only raw FCO counts.
+- **Verify:**
+  - Lifecycle docs specify portal KPI text as `Projects at Risk`.
+  - FCO metrics may remain in estimating/planning detail dashboards.
+  - Portal dashboard model does not make pending FCO count the primary project-risk KPI.
+
 ---
 
 ## Database Bootstrap / Seed
@@ -957,7 +965,7 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 ### QA-PLAN-007: Project Planning Domain Model Covers Required Entities
 - **Project-planning requirement:** The proposed domain model must support the full project planning hierarchy and timeline concepts.
 - **Verify:**
-  - Plan covers ProjectPlan, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, EstimateLink, FcoLink, TimelineBaseline, TimelineVariance, and CalendarEntry/equivalent.
+  - Plan covers Project, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, EstimateLink, FcoLink, TimelineBaseline, TimelineVariance, and CalendarEntry/equivalent.
   - Each entity has purpose, owner, key fields, relationships, and app boundary classification.
   - Hierarchy storage and dependency storage strategies are specified.
   - Audit/status/ownership fields are addressed.
@@ -1070,6 +1078,15 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - Delta output shows planned vs actual hours, charge, cost, margin, amount delta, and percent delta.
   - Rate/cost/margin math is not duplicated only in frontend views.
 
+### QA-ACT-002: Lifecycle Actuals Model Captures Cost And Billable Truth
+- **Lifecycle requirement:** Actuals are the truth and must capture both internal cost and billable/charged values.
+- **Verify:**
+  - Lifecycle docs define actual labor hours, labor cost, equipment cost, material cost, subcontract cost, billable labor amount, billable total, invoice-ready/charged values where feasible, actual start/finish, completion, and progress.
+  - Actuals require WorkOrder linkage.
+  - Actuals optionally link to task/step/substep and FCO where applicable.
+  - Rollups are defined for estimate, FCO, project, work order, task, and future estimating feedback.
+  - Authorized value vs forecast/actual overrun is treated as a risk condition.
+
 ---
 
 ## FCO / Change Order
@@ -1089,6 +1106,88 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
   - FCO links enforce estimate association.
   - Tasks associated with FCOs can be traced back to the estimate.
   - Mismatched task/FCO/estimate relationships are treated as validation defects or review items.
+
+### QA-FCO-003: Lifecycle FCO Model Requires Estimate And WorkOrder Linkage
+- **Lifecycle requirement:** FCO / Change Order is controlled business change, not a note.
+- **Verify:**
+  - FCO belongs to an Estimate.
+  - FCO belongs to a WorkOrder.
+  - FCO can reference impacted task/step/substep where appropriate.
+  - FCO includes description/scope change narrative, reason, commercial adjustment, schedule impact, approval status, author, approver, and dates.
+  - Migration strategy for required estimate/work-order links audits/backfills existing nulls and reports unresolved orphans before enforcing NOT NULL.
+
+---
+
+## Project Lifecycle / Stage Gates
+
+### QA-LIFE-001: Lifecycle Master Docs Are Created And Planning-Only
+- **Lifecycle requirement:** Claude must create lifecycle operating-model docs before implementation.
+- **Verify:**
+  - `docs/PROJECT_LIFECYCLE_MASTER_PLAN.md` exists.
+  - `docs/PROJECT_DATA_OWNERSHIP_AND_TRACEABILITY.md` exists.
+  - `docs/PROJECT_STAGE_GATE_AND_STATUS_MODEL.md` exists.
+  - `docs/PROJECT_ACTUALS_AND_VARIANCE_MODEL.md` exists.
+  - `docs/PROJECT_PLANNING_MASTER_TODO.md` is updated for lifecycle scope.
+  - Docs are grounded in actual repo findings and do not claim coding/source implementation under this planning-only gate.
+
+### QA-LIFE-002: Estimate Authorization Project WorkOrder Chain Is Defined
+- **Lifecycle requirement:** Executable work must not float without approved commercial traceability.
+- **Verify:**
+  - Estimate is defined as the commercial baseline and source of truth for original scope/cost/price/margin assumptions.
+  - CommercialAuthorization is flexible enough for PO, signed proposal, contract, notice to proceed, work authorization, or release order.
+  - Project is the execution umbrella tied to Estimate.
+  - WorkOrder ties to Project, Estimate, and CommercialAuthorization.
+  - Model supports one Estimate -> many WorkOrders and one Project -> many WorkOrders.
+  - No released WorkOrder without approved Estimate and valid CommercialAuthorization.
+
+### QA-LIFE-003: Step-Out And Work Release Gates Are Defined
+- **Lifecycle requirement:** Step-out plans belong under released execution work.
+- **Verify:**
+  - StepOutPlan belongs to WorkOrder.
+  - Traceability chain is Estimate -> CommercialAuthorization -> Project -> WorkOrder -> StepOutPlan -> StepOutStep -> StepOutSubStep.
+  - No Step-Out without WorkOrder.
+  - StepOutSubStep is included as the MVP leaf level with display numbering such as `1.1` and decimal durations like `.25`, `.5`, `1.5`.
+
+### QA-LIFE-004: Authorized Value Risk Is Modeled
+- **Lifecycle requirement:** The platform must protect payment and commercial exposure.
+- **Verify:**
+  - Docs define authorized value.
+  - Forecast/actual exceeding authorized value raises risk.
+  - Cost variance and billable variance are separate.
+  - Estimate vs actual, FCO vs actual, work order vs actual, and project vs actual rollups are defined.
+
+### QA-LIFE-005: Full Real-World Lifecycle Is Covered
+- **Lifecycle requirement:** The model must cover the end-to-end work flow from opportunity to lessons learned.
+- **Verify:**
+  - Docs cover opportunity/preconstruction/bid intake.
+  - Docs cover estimate development and revisions.
+  - Docs cover commercial authorization.
+  - Docs cover project initiation.
+  - Docs cover planning/PM and work release.
+  - Docs cover scheduling, execution, monitoring/controlling, change control, actuals/variance, closeout, and lessons learned.
+
+### QA-LIFE-006: Stage Gate And Status Model Is Explicit
+- **Lifecycle requirement:** Stage transitions and risk statuses must be clear enough to implement.
+- **Verify:**
+  - Status model exists for Estimate, Project, WorkOrder, Task/Step/SubStep, and milestone.
+  - Stage gates define required prerequisites for release and progression.
+  - At-risk threshold defaults to 5 days with optional per-project override.
+  - On-track, at-risk, late, complete, and closeout states are defined with calculation or transition rules.
+  - PM lifecycle lens is mapped practically: initiating, planning, executing, monitoring/controlling, closing.
+
+### QA-LIFE-007: Developer Handoff Docs Are Canonical And Reconciled
+- **Lifecycle requirement:** The doc package must be safe to hand to developers without contradictory sources of truth.
+- **Verify:**
+  - `docs/PROJECT_HANDOFF_INDEX.md` exists.
+  - The handoff index names the final approved reading order.
+  - The handoff index identifies the canonical source of truth per topic.
+  - `docs/PROJECT_PLANNING_MASTER_PLAN.md` is updated, archived, or clearly marked superseded.
+  - `docs/PROJECT_PLANNING_DATA_MODEL.md` is updated, archived, or clearly marked superseded.
+  - The `ProjectPlan` vs `Project` model conflict is resolved.
+  - The `TaskActual` vs `ActualEntry` model conflict is resolved.
+  - The Gantt implementation contradiction is resolved.
+  - The `StepOutSubStep` MVP-vs-post-MVP contradiction is resolved in favor of the current approved lifecycle requirement unless Joseph explicitly changes it.
+  - No stale doc can reasonably be treated as equal truth to `PROJECT_LIFECYCLE_MASTER_PLAN.md` and `PROJECT_DATA_OWNERSHIP_AND_TRACEABILITY.md`.
 
 ---
 

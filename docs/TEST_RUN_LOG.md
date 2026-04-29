@@ -16,6 +16,8 @@ Format: Date | Phase | Command | Purpose | Result | Notes
 | 2026-04-28 | Data recovery | Authenticated read-only checks for `/api/v1/estimates` and `/api/v1/staffing-plans` | Confirm data returned | PASS | CSL returned `43` estimates and `12` staffing plans. |
 | 2026-04-28 | Platform scheduling queue audit | `dotnet build --no-restore --configuration Release` | Check Claude's current Portal/Planning/Scheduling backend compiles | PASS | Build succeeded. Warnings: AutoMapper high severity advisory and nullable schema processor warning in `Api/Program.cs`. NSwag executed successfully during build. |
 | 2026-04-28 | Platform scheduling queue audit | `npm.cmd --prefix webapp run build:dev` | Check Claude's current Portal/Planning/Scheduling frontend compiles | PASS | Vite build succeeded with scheduling/planning/portal chunks emitted. Functional route/API verification still pending. |
+| 2026-04-28 | Handoff doc cleanup | `rg -n "ProjectPlan|TaskActual|dhtmlx-gantt|/api/v1/project-plans|ProjectPlanView|ProjectPlans|DbSet<ProjectPlan>|DbSet<TaskActual>" ...` | Verify stale terms were removed from active canonical docs | PASS | Remaining matches are only archived/superseded/conflict context in tombstones, handoff index, QA notes, or worklog. |
+| 2026-04-28 | Handoff doc cleanup | `Test-Path` checks for all handoff-index docs | Verify every doc named in `PROJECT_HANDOFF_INDEX.md` exists | PASS | All eight canonical docs plus the handoff index exist. |
 
 ---
 

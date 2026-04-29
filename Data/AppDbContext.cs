@@ -43,12 +43,26 @@ public class AppDbContext : DbContext
     public DbSet<CrewTemplateRow> CrewTemplateRows { get; set; } = null!;
 
     // Planning
+    public DbSet<CommercialAuthorization> CommercialAuthorizations { get; set; } = null!;
+    public DbSet<Project> Projects { get; set; } = null!;
+    public DbSet<WorkOrder> WorkOrders { get; set; } = null!;
+    public DbSet<ProjectPhase> ProjectPhases { get; set; } = null!;
+    public DbSet<PlanTask> PlanTasks { get; set; } = null!;
+    public DbSet<TaskDependency> TaskDependencies { get; set; } = null!;
+    public DbSet<Milestone> Milestones { get; set; } = null!;
     public DbSet<StepOutPlan> StepOutPlans { get; set; } = null!;
     public DbSet<StepOutStep> StepOutSteps { get; set; } = null!;
+    public DbSet<StepOutSubStep> StepOutSubSteps { get; set; } = null!;
     public DbSet<StepDependency> StepDependencies { get; set; } = null!;
     public DbSet<StepResourceReq> StepResourceReqs { get; set; } = null!;
     public DbSet<WorkPackage> WorkPackages { get; set; } = null!;
     public DbSet<FcoDocument> FcoDocuments { get; set; } = null!;
+    public DbSet<FcoLaborLine> FcoLaborLines { get; set; } = null!;
+    public DbSet<ActualEntry> ActualEntries { get; set; } = null!;
+    public DbSet<EstimateTaskLink> EstimateTaskLinks { get; set; } = null!;
+    public DbSet<FcoTaskLink> FcoTaskLinks { get; set; } = null!;
+    public DbSet<TimelineBaseline> TimelineBaselines { get; set; } = null!;
+    public DbSet<TaskProgressSnapshot> TaskProgressSnapshots { get; set; } = null!;
 
     // Scheduling
     public DbSet<Craft> Crafts { get; set; } = null!;
@@ -398,7 +412,134 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ── Planning ───────────────────────────────────────────────────────
+        // ── Planning — Lifecycle Models ────────────────────────────────────
+        modelBuilder.Entity<CommercialAuthorization>(b =>
+        {
+            b.HasKey(ca => ca.CommercialAuthorizationId);
+            b.HasIndex(ca => new { ca.CompanyCode, ca.AuthorizationNumber });
+            b.Property(ca => ca.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(ca => ca.AuthorizationNumber).IsRequired().HasMaxLength(100);
+            b.Property(ca => ca.AuthorizationType).IsRequired().HasMaxLength(50);
+            b.Property(ca => ca.AuthorizedValue).HasPrecision(18, 2);
+            b.Property(ca => ca.AuthorizedBy).HasMaxLength(200);
+            b.Property(ca => ca.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Draft");
+            b.Property(ca => ca.DocumentReference).HasMaxLength(500);
+            b.Property(ca => ca.CreatedBy).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Project>(b =>
+        {
+            b.HasKey(p => p.ProjectId);
+            b.HasIndex(p => new { p.CompanyCode, p.ProjectNumber }).IsUnique();
+            b.Property(p => p.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(p => p.ProjectNumber).IsRequired().HasMaxLength(50);
+            b.Property(p => p.Name).IsRequired().HasMaxLength(200);
+            b.Property(p => p.Client).HasMaxLength(200);
+            b.Property(p => p.ClientCode).HasMaxLength(50);
+            b.Property(p => p.Site).HasMaxLength(200);
+            b.Property(p => p.City).HasMaxLength(100);
+            b.Property(p => p.State).HasMaxLength(50);
+            b.Property(p => p.JobLetter).HasMaxLength(10);
+            b.Property(p => p.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Initiating");
+            b.Property(p => p.AtRiskThresholdDays).HasDefaultValue(5);
+            b.Property(p => p.OwnerUserId).HasMaxLength(100);
+            b.Property(p => p.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(p => p.CommercialAuthorization)
+                .WithMany(ca => ca.Projects)
+                .HasForeignKey(p => p.CommercialAuthorizationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<WorkOrder>(b =>
+        {
+            b.HasKey(wo => wo.WorkOrderId);
+            b.HasIndex(wo => new { wo.CompanyCode, wo.WorkOrderNumber }).IsUnique();
+            b.Property(wo => wo.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(wo => wo.WorkOrderNumber).IsRequired().HasMaxLength(50);
+            b.Property(wo => wo.Title).IsRequired().HasMaxLength(200);
+            b.Property(wo => wo.AuthorizedValue).HasPrecision(18, 2).HasDefaultValue(0m);
+            b.Property(wo => wo.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Draft");
+            b.Property(wo => wo.ReleasedBy).HasMaxLength(200);
+            b.Property(wo => wo.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(wo => wo.Project)
+                .WithMany(p => p.WorkOrders)
+                .HasForeignKey(wo => wo.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(wo => wo.CommercialAuthorization)
+                .WithMany(ca => ca.WorkOrders)
+                .HasForeignKey(wo => wo.CommercialAuthorizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProjectPhase>(b =>
+        {
+            b.HasKey(ph => ph.PhaseId);
+            b.Property(ph => ph.Name).IsRequired().HasMaxLength(200);
+            b.Property(ph => ph.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Planning");
+            b.Property(ph => ph.Color).HasMaxLength(20);
+            b.HasOne(ph => ph.Project)
+                .WithMany(p => p.Phases)
+                .HasForeignKey(ph => ph.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlanTask>(b =>
+        {
+            b.HasKey(t => t.TaskId);
+            b.Property(t => t.Title).IsRequired().HasMaxLength(300);
+            b.Property(t => t.TaskType).IsRequired().HasMaxLength(30).HasDefaultValue("Task");
+            b.Property(t => t.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Pending");
+            b.Property(t => t.PercentComplete).HasPrecision(5, 2);
+            b.Property(t => t.CraftCode).HasMaxLength(50);
+            b.Property(t => t.AssignedTo).HasMaxLength(200);
+            b.Property(t => t.OwnerUserId).HasMaxLength(100);
+            b.Property(t => t.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(t => t.Phase)
+                .WithMany(ph => ph.Tasks)
+                .HasForeignKey(t => t.PhaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(t => t.ParentTask)
+                .WithMany(t => t.SubTasks)
+                .HasForeignKey(t => t.ParentTaskId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<TaskDependency>(b =>
+        {
+            b.HasKey(d => d.DependencyId);
+            b.Property(d => d.DependencyType).IsRequired().HasMaxLength(30).HasDefaultValue("FinishToStart");
+            b.HasOne(d => d.SuccessorTask)
+                .WithMany(t => t.SuccessorDependencies)
+                .HasForeignKey(d => d.SuccessorTaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(d => d.PredecessorTask)
+                .WithMany(t => t.PredecessorDependencies)
+                .HasForeignKey(d => d.PredecessorTaskId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Milestone>(b =>
+        {
+            b.HasKey(m => m.MilestoneId);
+            b.Property(m => m.Name).IsRequired().HasMaxLength(200);
+            b.Property(m => m.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Pending");
+            b.Property(m => m.Color).HasMaxLength(20);
+            b.Property(m => m.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(m => m.Project)
+                .WithMany(p => p.Milestones)
+                .HasForeignKey(m => m.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(m => m.Phase)
+                .WithMany(ph => ph.Milestones)
+                .HasForeignKey(m => m.PhaseId)
+                .OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(m => m.Task)
+                .WithMany(t => t.Milestones)
+                .HasForeignKey(m => m.TaskId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        // ── Planning — Step-Out / Work Packages ────────────────────────────
         modelBuilder.Entity<StepOutPlan>(b =>
         {
             b.HasKey(p => p.PlanId);
@@ -406,6 +547,10 @@ public class AppDbContext : DbContext
             b.Property(p => p.Name).IsRequired().HasMaxLength(200);
             b.Property(p => p.Status).IsRequired().HasMaxLength(30);
             b.Property(p => p.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(p => p.WorkOrder)
+                .WithMany(wo => wo.StepOutPlans)
+                .HasForeignKey(p => p.WorkOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<StepOutStep>(b =>
@@ -415,10 +560,15 @@ public class AppDbContext : DbContext
             b.Property(s => s.SortOrder).HasPrecision(10, 4);
             b.Property(s => s.Title).IsRequired().HasMaxLength(300);
             b.Property(s => s.Status).IsRequired().HasMaxLength(30);
+            b.Property(s => s.DurationHours).HasPrecision(8, 2);
             b.HasOne(s => s.Plan)
                 .WithMany(p => p.Steps)
                 .HasForeignKey(s => s.PlanId)
                 .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(s => s.ParentStep)
+                .WithMany(s => s.SubSteps)
+                .HasForeignKey(s => s.ParentStepId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<StepDependency>(b =>
@@ -455,6 +605,10 @@ public class AppDbContext : DbContext
                 .WithMany(p => p.WorkPackages)
                 .HasForeignKey(wp => wp.PlanId)
                 .OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(wp => wp.WorkOrder)
+                .WithMany(wo => wo.WorkPackages)
+                .HasForeignKey(wp => wp.WorkOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<FcoDocument>(b =>
@@ -469,6 +623,133 @@ public class AppDbContext : DbContext
             b.Property(f => f.UpdatedContractValue).HasPrecision(18, 2);
             b.Property(f => f.TaxPct).HasPrecision(5, 4);
             b.Property(f => f.CreatedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(f => f.LinkedWorkOrder)
+                .WithMany()
+                .HasForeignKey(f => f.LinkedWorkOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<StepOutSubStep>(b =>
+        {
+            b.HasKey(ss => ss.SubStepId);
+            b.Property(ss => ss.SubStepCode).IsRequired().HasMaxLength(20);
+            b.Property(ss => ss.SortOrder).HasPrecision(10, 4);
+            b.Property(ss => ss.Title).IsRequired().HasMaxLength(300);
+            b.Property(ss => ss.Status).IsRequired().HasMaxLength(30).HasDefaultValue("Pending");
+            b.Property(ss => ss.DurationHours).HasPrecision(8, 2);
+            b.Property(ss => ss.ActualDurationHours).HasPrecision(8, 2);
+            b.Property(ss => ss.CraftCode).HasMaxLength(50);
+            b.HasOne(ss => ss.Step)
+                .WithMany(s => s.SubStepLeafs)
+                .HasForeignKey(ss => ss.StepId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FcoLaborLine>(b =>
+        {
+            b.HasKey(l => l.FcoLaborLineId);
+            b.Property(l => l.Position).IsRequired().HasMaxLength(100);
+            b.Property(l => l.LaborType).IsRequired().HasMaxLength(20).HasDefaultValue("Direct");
+            b.Property(l => l.CraftCode).HasMaxLength(50);
+            b.Property(l => l.NavCode).HasMaxLength(50);
+            b.Property(l => l.StHours).HasPrecision(10, 2);
+            b.Property(l => l.OtHours).HasPrecision(10, 2);
+            b.Property(l => l.DtHours).HasPrecision(10, 2);
+            b.Property(l => l.BillStRate).HasPrecision(18, 4);
+            b.Property(l => l.BillOtRate).HasPrecision(18, 4);
+            b.Property(l => l.BillDtRate).HasPrecision(18, 4);
+            b.Property(l => l.Subtotal).HasPrecision(18, 2);
+            b.HasOne(l => l.FcoDocument)
+                .WithMany()
+                .HasForeignKey(l => l.FcoDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ActualEntry>(b =>
+        {
+            b.HasKey(a => a.ActualEntryId);
+            b.Property(a => a.CompanyCode).IsRequired().HasMaxLength(10);
+            b.Property(a => a.ActualType).IsRequired().HasMaxLength(30).HasDefaultValue("Labor");
+            b.Property(a => a.Position).HasMaxLength(100);
+            b.Property(a => a.CraftCode).HasMaxLength(50);
+            b.Property(a => a.EnteredBy).IsRequired().HasMaxLength(100);
+            b.Property(a => a.StHours).HasPrecision(10, 2);
+            b.Property(a => a.OtHours).HasPrecision(10, 2);
+            b.Property(a => a.DtHours).HasPrecision(10, 2);
+            b.Property(a => a.CostAmount).HasPrecision(18, 2);
+            b.Property(a => a.BillableAmount).HasPrecision(18, 2);
+            b.Property(a => a.BilledAmount).HasPrecision(18, 2);
+            b.HasOne(a => a.WorkOrder)
+                .WithMany()
+                .HasForeignKey(a => a.WorkOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(a => a.FcoDocument)
+                .WithMany()
+                .HasForeignKey(a => a.FcoDocumentId)
+                .OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(a => a.PlanTask)
+                .WithMany()
+                .HasForeignKey(a => a.PlanTaskId)
+                .OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(a => a.StepOutStep)
+                .WithMany()
+                .HasForeignKey(a => a.StepOutStepId)
+                .OnDelete(DeleteBehavior.NoAction);
+            b.HasOne(a => a.StepOutSubStep)
+                .WithMany()
+                .HasForeignKey(a => a.StepOutSubStepId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<EstimateTaskLink>(b =>
+        {
+            b.HasKey(l => l.LinkId);
+            b.HasIndex(l => new { l.TaskId, l.EstimateId }).IsUnique();
+            b.Property(l => l.LinkType).IsRequired().HasMaxLength(30).HasDefaultValue("Primary");
+            b.HasOne(l => l.Task)
+                .WithMany()
+                .HasForeignKey(l => l.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FcoTaskLink>(b =>
+        {
+            b.HasKey(l => l.LinkId);
+            b.HasIndex(l => new { l.TaskId, l.FcoDocumentId }).IsUnique();
+            b.Property(l => l.LinkType).IsRequired().HasMaxLength(30).HasDefaultValue("ScopeAddition");
+            b.HasOne(l => l.Task)
+                .WithMany()
+                .HasForeignKey(l => l.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(l => l.FcoDocument)
+                .WithMany()
+                .HasForeignKey(l => l.FcoDocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TimelineBaseline>(b =>
+        {
+            b.HasKey(tb => tb.BaselineId);
+            b.Property(tb => tb.EntityType).IsRequired().HasMaxLength(20).HasDefaultValue("Project");
+            b.Property(tb => tb.BaselineReason).HasMaxLength(500);
+            b.Property(tb => tb.BaselineLabel).HasMaxLength(100);
+            b.Property(tb => tb.LockedBy).IsRequired().HasMaxLength(100);
+            b.HasOne(tb => tb.Project)
+                .WithMany()
+                .HasForeignKey(tb => tb.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TaskProgressSnapshot>(b =>
+        {
+            b.HasKey(s => s.SnapshotId);
+            b.Property(s => s.Status).IsRequired().HasMaxLength(30);
+            b.Property(s => s.ReportedBy).IsRequired().HasMaxLength(100);
+            b.Property(s => s.PercentComplete).HasPrecision(5, 2);
+            b.HasOne(s => s.Task)
+                .WithMany()
+                .HasForeignKey(s => s.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── Scheduling ─────────────────────────────────────────────────────
@@ -484,7 +765,17 @@ public class AppDbContext : DbContext
             b.HasKey(r => r.ResourceId);
             b.Property(r => r.CompanyCode).IsRequired().HasMaxLength(10);
             b.Property(r => r.Name).IsRequired().HasMaxLength(200);
+            b.Property(r => r.EmployeeId).HasMaxLength(50);
+            b.Property(r => r.FirstName).IsRequired().HasMaxLength(100);
+            b.Property(r => r.LastName).IsRequired().HasMaxLength(100);
             b.Property(r => r.CraftCode).IsRequired().HasMaxLength(50);
+            b.Property(r => r.Region).HasMaxLength(100);
+            b.Property(r => r.Branch).HasMaxLength(100);
+            b.Property(r => r.EmploymentStatus).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
+            b.Property(r => r.ShiftEligibility).IsRequired().HasMaxLength(20).HasDefaultValue("Any");
+            b.Property(r => r.Phone).HasMaxLength(30);
+            b.Property(r => r.Email).HasMaxLength(200);
+            b.HasIndex(r => new { r.CompanyCode, r.EmployeeId });
             b.HasOne(r => r.Craft)
                 .WithMany(c => c.Resources)
                 .HasForeignKey(r => r.CraftCode)

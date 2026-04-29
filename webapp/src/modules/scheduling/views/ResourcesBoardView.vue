@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="sched-view">
         <div class="sched-view-header">
             <div>
@@ -25,34 +25,45 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="resourceId" size="small"
-            selectionMode="single" @row-click="openDetail">
-            <Column field="name" header="Name" sortable />
-            <Column field="craftCode" header="Craft" style="width:100px" sortable>
+            class="ent-grid" selectionMode="single" @row-click="openDetail">
+            <Column field="name" header="Name" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.name }}</span>
+                </template>
+            </Column>
+            <Column field="craftCode" header="Craft" style="width:80px" sortable>
                 <template #body="{ data }">
                     <Tag :value="data.craftCode" severity="info" />
                 </template>
             </Column>
-            <Column field="branch" header="Branch" style="width:120px" />
-            <Column header="Active" style="width:80px">
+            <Column field="branch" header="Branch" style="width:110px">
                 <template #body="{ data }">
-                    <i :class="data.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'" />
+                    <span class="ent-truncate">{{ data.branch }}</span>
                 </template>
             </Column>
-            <Column header="Certifications" style="width:200px">
+            <Column header="Active" style="width:64px">
+                <template #body="{ data }">
+                    <i :class="data.isActive ? 'pi pi-check-circle text-green-500' : 'pi pi-times-circle text-red-400'"
+                        style="font-size:0.9rem" />
+                </template>
+            </Column>
+            <Column header="Certifications" style="width:180px">
                 <template #body="{ data }">
                     <div class="cert-pills">
-                        <Tag v-for="c in (data.certifications ?? []).slice(0, 3)" :key="c.certId"
+                        <Tag v-for="c in (data.certifications ?? []).slice(0, 2)" :key="c.certId"
                             :value="c.type" severity="secondary" class="cert-pill" />
-                        <span v-if="(data.certifications ?? []).length > 3" class="cert-more">
-                            +{{ data.certifications.length - 3 }}
+                        <span v-if="(data.certifications ?? []).length > 2" class="cert-overflow">
+                            +{{ data.certifications.length - 2 }}
                         </span>
                     </div>
                 </template>
             </Column>
-            <Column header="" style="width:90px">
+            <Column header="" style="width:68px">
                 <template #body="{ data }">
-                    <Button icon="pi pi-pencil" text size="small" @click.stop="openEdit(data)" />
-                    <Button icon="pi pi-trash" text severity="danger" size="small" @click.stop="confirmDelete(data)" />
+                    <div class="row-actions">
+                        <Button icon="pi pi-pencil" text size="small" @click.stop="openEdit(data)" />
+                        <Button icon="pi pi-trash" text severity="danger" size="small" @click.stop="confirmDelete(data)" />
+                    </div>
                 </template>
             </Column>
             <template #empty>
@@ -215,10 +226,10 @@ async function saveResource() {
     saving.value = true;
     try {
         if (editMode.value && editId.value) {
-            await apiStore.api.value.put(`/api/v1/scheduling/resources/${editId.value}`, form.value);
+            await apiStore.api.put(`/api/v1/scheduling/resources/${editId.value}`, form.value);
             toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
         } else {
-            await apiStore.api.value.post('/api/v1/scheduling/resources', form.value);
+            await apiStore.api.post('/api/v1/scheduling/resources', form.value);
             toast.add({ severity: 'success', summary: 'Resource Created', life: 2000 });
         }
         formVisible.value = false;
@@ -238,7 +249,7 @@ function confirmDelete(r: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.value.delete(`/api/v1/scheduling/resources/${r.resourceId}`);
+                await apiStore.api.delete(`/api/v1/scheduling/resources/${r.resourceId}`);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -258,7 +269,7 @@ async function openDetail(event: any) {
     detailResource.value = r;
     detailVisible.value = true;
     try {
-        const { data } = await apiStore.api.value.get(`/api/v1/scheduling/resources/${r.resourceId}/certifications`);
+        const { data } = await apiStore.api.get(`/api/v1/scheduling/resources/${r.resourceId}/certifications`);
         detailCerts.value = data;
     } catch {
         detailCerts.value = [];
@@ -283,9 +294,9 @@ async function saveCert() {
             type: certForm.value.type,
             expirationDate: certForm.value.expirationDate,
         };
-        await apiStore.api.value.post('/api/v1/scheduling/certifications', payload);
+        await apiStore.api.post('/api/v1/scheduling/certifications', payload);
         certVisible.value = false;
-        const { data } = await apiStore.api.value.get(`/api/v1/scheduling/resources/${detailResource.value.resourceId}/certifications`);
+        const { data } = await apiStore.api.get(`/api/v1/scheduling/resources/${detailResource.value.resourceId}/certifications`);
         detailCerts.value = data;
         toast.add({ severity: 'success', summary: 'Certification Added', life: 2000 });
     } catch {
@@ -297,7 +308,7 @@ async function saveCert() {
 
 async function deleteCert(cert: any) {
     try {
-        await apiStore.api.value.delete(`/api/v1/scheduling/certifications/${cert.certId}`);
+        await apiStore.api.delete(`/api/v1/scheduling/certifications/${cert.certId}`);
         detailCerts.value = detailCerts.value.filter(c => c.certId !== cert.certId);
         toast.add({ severity: 'success', summary: 'Removed', life: 2000 });
     } catch {
@@ -309,7 +320,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.value.get('/api/v1/scheduling/resources');
+        const { data } = await apiStore.api.get('/api/v1/scheduling/resources');
         resources.value = data;
     } catch {
         error.value = true;
@@ -329,9 +340,8 @@ onMounted(load);
 .sched-header-actions { display: flex; gap: 0.5rem; align-items: center; }
 .sched-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
-.cert-pills { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
-.cert-pill { font-size: 0.7rem !important; }
-.cert-more { font-size: 0.75rem; color: var(--text-color-secondary); }
+.cert-pills { display: flex; flex-wrap: nowrap; gap: 0.25rem; align-items: center; overflow: hidden; }
+.cert-pill { font-size: 0.7rem !important; flex-shrink: 0; }
 .form-grid { display: flex; flex-direction: column; gap: 1rem; }
 .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
 .form-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }

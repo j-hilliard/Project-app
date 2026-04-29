@@ -83,12 +83,18 @@ public class SchedulingController : ControllerBase
     public async Task<IActionResult> ListResources(
         [FromQuery] string? craft,
         [FromQuery] bool? active,
+        [FromQuery] string? region,
+        [FromQuery] string? branch,
+        [FromQuery] string? status,
         CancellationToken ct)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var q = db.Resources.Where(r => r.CompanyCode == CompanyCode);
         if (craft != null) q = q.Where(r => r.CraftCode == craft);
         if (active.HasValue) q = q.Where(r => r.IsActive == active.Value);
+        if (region != null) q = q.Where(r => r.Region == region);
+        if (branch != null) q = q.Where(r => r.Branch == branch);
+        if (status != null) q = q.Where(r => r.EmploymentStatus == status);
         var list = await q.Include(r => r.Certifications).OrderBy(r => r.Name).ToListAsync(ct);
         return Ok(list);
     }
@@ -97,6 +103,9 @@ public class SchedulingController : ControllerBase
     public async Task<IActionResult> CreateResource([FromBody] Resource resource, CancellationToken ct)
     {
         resource.CompanyCode = CompanyCode;
+        // Keep Name in sync with First/Last for backward compat
+        if (!string.IsNullOrWhiteSpace(resource.FirstName) || !string.IsNullOrWhiteSpace(resource.LastName))
+            resource.Name = $"{resource.FirstName} {resource.LastName}".Trim();
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         db.Resources.Add(resource);
         await db.SaveChangesAsync(ct);
@@ -120,10 +129,21 @@ public class SchedulingController : ControllerBase
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var existing = await db.Resources.FirstOrDefaultAsync(r => r.ResourceId == id && r.CompanyCode == CompanyCode, ct);
         if (existing == null) return NotFound();
-        existing.Name = update.Name;
+        existing.FirstName = update.FirstName;
+        existing.LastName = update.LastName;
+        existing.Name = !string.IsNullOrWhiteSpace(update.FirstName) || !string.IsNullOrWhiteSpace(update.LastName)
+            ? $"{update.FirstName} {update.LastName}".Trim()
+            : update.Name;
+        existing.EmployeeId = update.EmployeeId;
         existing.CraftCode = update.CraftCode;
+        existing.Region = update.Region;
         existing.Branch = update.Branch;
+        existing.EmploymentStatus = update.EmploymentStatus;
         existing.IsActive = update.IsActive;
+        existing.ShiftEligibility = update.ShiftEligibility;
+        existing.Phone = update.Phone;
+        existing.Email = update.Email;
+        existing.Notes = update.Notes;
         await db.SaveChangesAsync(ct);
         return Ok(existing);
     }

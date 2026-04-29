@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="sched-view">
         <div class="sched-view-header">
             <div>
@@ -142,7 +142,7 @@ function sourceTagSeverity(type: string) {
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 async function load() {
@@ -150,8 +150,8 @@ async function load() {
     error.value = false;
     try {
         const [dashResp, jobsResp] = await Promise.all([
-            apiStore.api.value.get('/api/v1/scheduling/dashboard'),
-            apiStore.api.value.get('/api/v1/scheduling/jobs'),
+            apiStore.api.get('/api/v1/scheduling/dashboard'),
+            apiStore.api.get('/api/v1/scheduling/jobs'),
         ]);
         kpis.value = dashResp.data;
         recentJobs.value = (jobsResp.data as any[]).slice(0, 8);

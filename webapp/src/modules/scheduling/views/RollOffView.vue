@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="sched-view">
         <div class="sched-view-header">
             <div>
@@ -20,33 +20,43 @@
             <p>No resources ending within {{ days }} days. Great coverage!</p>
         </div>
 
-        <DataTable v-else :value="enriched" :loading="loading" stripedRows dataKey="assignmentId" size="small">
-            <Column field="resource.name" header="Resource" sortable />
-            <Column field="resource.craftCode" header="Craft" style="width:90px">
+        <DataTable v-else :value="enriched" :loading="loading" stripedRows dataKey="assignmentId" size="small" class="ent-grid">
+            <Column field="resource.name" header="Resource" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.resource?.name }}</span>
+                </template>
+            </Column>
+            <Column field="resource.craftCode" header="Craft" style="width:72px">
                 <template #body="{ data }">
                     <Tag :value="data.resource?.craftCode" severity="info" />
                 </template>
             </Column>
-            <Column field="jobName" header="Current Job" sortable />
-            <Column header="End Date" style="width:120px" sortable sortField="end">
+            <Column field="jobName" header="Current Job" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.jobName }}</span>
+                </template>
+            </Column>
+            <Column header="End Date" style="width:110px" sortable sortField="end">
                 <template #body="{ data }">{{ fmtDate(data.end) }}</template>
             </Column>
-            <Column header="Days Left" style="width:90px">
+            <Column header="Days Left" style="width:80px">
                 <template #body="{ data }">
                     <span :class="daysLeftClass(data.end)">{{ daysLeft(data.end) }}</span>
                 </template>
             </Column>
-            <Column header="Next Match" style="width:160px">
+            <Column header="Next Match" style="width:150px">
                 <template #body="{ data }">
-                    <span v-if="nextMatch(data.resource?.craftCode)" class="next-match">
+                    <span v-if="nextMatch(data.resource?.craftCode)" class="next-match ent-truncate">
                         {{ nextMatch(data.resource?.craftCode)?.resourceName }}
                     </span>
                     <span v-else class="sched-empty">—</span>
                 </template>
             </Column>
-            <Column header="" style="width:130px">
+            <Column header="" style="width:120px">
                 <template #body="{ data }">
-                    <Button label="Re-Assign" size="small" outlined @click="openAssign(data)" />
+                    <div class="row-actions">
+                        <Button label="Re-Assign" size="small" outlined @click="openAssign(data)" />
+                    </div>
                 </template>
             </Column>
             <template #empty>
@@ -124,7 +134,7 @@ function nextMatch(craftCode: string | null | undefined) {
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function daysLeft(end: string | null | undefined) {
@@ -176,7 +186,7 @@ async function saveAssign() {
             shift: assignForm.value.shift,
             status: 'Planned',
         };
-        await apiStore.api.value.post('/api/v1/scheduling/assignments', payload);
+        await apiStore.api.post('/api/v1/scheduling/assignments', payload);
         assignVisible.value = false;
         toast.add({ severity: 'success', summary: 'Assignment Created', life: 2500 });
         await load();
@@ -192,9 +202,9 @@ async function load() {
     error.value = false;
     try {
         const [endResp, matchResp, jobsResp] = await Promise.all([
-            apiStore.api.value.get(`/api/v1/scheduling/ending-soon?days=${days.value}`),
-            apiStore.api.value.get('/api/v1/scheduling/suggested-matches'),
-            apiStore.api.value.get('/api/v1/scheduling/jobs'),
+            apiStore.api.get(`/api/v1/scheduling/ending-soon?days=${days.value}`),
+            apiStore.api.get('/api/v1/scheduling/suggested-matches'),
+            apiStore.api.get('/api/v1/scheduling/jobs'),
         ]);
         endingSoon.value = endResp.data;
         suggestedMatches.value = matchResp.data;

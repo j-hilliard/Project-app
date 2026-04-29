@@ -13,7 +13,11 @@ public class StepOutStep
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
 
+    public int? ParentStepId { get; set; }
+    public StepOutStep? ParentStep { get; set; }
+
     public int? DurationMinutes { get; set; }
+    public decimal? DurationHours { get; set; }
     public int RequiredPeople { get; set; } = 1;
     public string? CraftCode { get; set; }
 
@@ -30,6 +34,8 @@ public class StepOutStep
     public DateTime? PlannedEnd { get; set; }
     public string? Notes { get; set; }
 
+    public ICollection<StepOutStep> SubSteps { get; set; } = new List<StepOutStep>();
+    public ICollection<StepOutSubStep> SubStepLeafs { get; set; } = new List<StepOutSubStep>();
     public ICollection<StepDependency> Dependencies { get; set; } = new List<StepDependency>();
     public ICollection<StepResourceReq> ResourceRequirements { get; set; } = new List<StepResourceReq>();
 }

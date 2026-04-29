@@ -37,6 +37,11 @@ Purpose: this is the QA spine for the platform expansion. Claude may plan or imp
 | Full project planning master plan | Claude must produce planning-only docs grounded in the repo before coding project timelines/Gantt/calendar/task hierarchy. | `PLATFORM-021` | `QA-PLAN-006` |
 | Project planning domain model | Project planning must model plans, timelines, phases, tasks, dependencies, milestones, step-out details, baselines, variance, and calendar entries. | `PLATFORM-022` | `QA-PLAN-007`, `QA-PLAN-009` |
 | Estimate/FCO/task traceability and schedule health | The plan must define bidirectional estimate/FCO/task traceability, ownership, validation, ahead/behind formulas, slippage, and downstream impact. | `PLATFORM-023` | `QA-PLAN-008`, `QA-PLAN-010`, `QA-FCO-002` |
+| End-to-end lifecycle operating model | Claude must produce planning-only lifecycle docs grounded in the repo before coding commercial authorization, work orders, actuals, stage gates, closeout, or lessons learned. | `PLATFORM-024` | `QA-LIFE-001` |
+| Estimate authorization project work-order chain | Estimate remains commercial baseline; commercial authorization gates work release; project is execution umbrella; work order is released execution package. | `PLATFORM-025` | `QA-LIFE-002`, `QA-LIFE-003`, `QA-PLAT-010` |
+| FCO actuals variance and authorized value risk | FCO must tie to Estimate and WorkOrder; actuals require WorkOrder; actual cost and billable values roll up against estimate/FCO/project/work order/task; authorized value overrun raises risk. | `PLATFORM-026` | `QA-ACT-002`, `QA-FCO-003`, `QA-LIFE-004` |
+| Stage gates closeout and lessons learned | Lifecycle covers opportunity through closeout, PM lifecycle stages, stage/status models, at-risk thresholds, and future estimating feedback. | `PLATFORM-027` | `QA-LIFE-005`, `QA-LIFE-006`, `QA-PLAN-010` |
+| Developer handoff package | Canonical docs are declared, stale planning docs are reconciled or marked superseded, and conflicts do not survive into dev handoff. | `PLATFORM-028` | `QA-LIFE-007`, `QA-PLAT-003` |
 
 ## Auditor Actions When Claude Claims A Phase Is Done
 

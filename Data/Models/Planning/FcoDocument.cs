@@ -6,6 +6,8 @@ public class FcoDocument
     public string CompanyCode { get; set; } = string.Empty;
 
     public int? LinkedEstimateId { get; set; }
+    public int? LinkedWorkOrderId { get; set; }
+    public WorkOrder? LinkedWorkOrder { get; set; }
 
     public string FcoNumber { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

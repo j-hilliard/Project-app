@@ -44,8 +44,8 @@ if ($apiOwner) {
         Write-Host "  WARNING: Node/Vite is occupying API port 7211. Stopping PID $($apiOwner.ProcessId) so the API can bind correctly." -ForegroundColor Yellow
         Stop-Process -Id $apiOwner.ProcessId -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
-    } elseif ($apiOwner.ProcessName -eq "dotnet") {
-        Write-Host "  API port 7211 is already owned by dotnet. Reusing existing API process PID $($apiOwner.ProcessId)." -ForegroundColor Green
+    } elseif ($apiOwner.ProcessName -in @("dotnet", "Api")) {
+        Write-Host "  API port 7211 is already owned by $($apiOwner.ProcessName). Reusing existing API process PID $($apiOwner.ProcessId)." -ForegroundColor Green
         $apiAlreadyRunning = $true
     } else {
         Write-Host "  ERROR: Port 7211 is occupied by $($apiOwner.ProcessName) PID $($apiOwner.ProcessId)." -ForegroundColor Red
@@ -98,8 +98,8 @@ for ($i = 0; $i -lt 40; $i++) {
 }
 $http.Dispose()
 $apiOwner = Get-StrongholdPortOwner -Port 7211
-if ($apiOwner -and $apiOwner.ProcessName -ne "dotnet") {
-    Write-Host "  ERROR: API port 7211 is owned by $($apiOwner.ProcessName), not dotnet. Data calls will fail." -ForegroundColor Red
+if ($apiOwner -and $apiOwner.ProcessName -notin @("dotnet", "Api")) {
+    Write-Host "  ERROR: API port 7211 is owned by $($apiOwner.ProcessName), not the Stronghold API. Data calls will fail." -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -135,6 +135,10 @@ if ($tunnelUrl -and $cfToken) {
     } catch { Write-Host "  Worker update failed: $_" -ForegroundColor Yellow }
 }
 
+# Open API swagger first so browser accepts the dev cert for port 7211
+# before the app makes cross-origin fetch requests to it.
+Start-Process "https://localhost:7211/swagger"
+Start-Sleep -Seconds 2
 Start-Process "https://localhost:7210"
 
 Write-Host ""

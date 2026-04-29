@@ -37,37 +37,44 @@
             </div>
         </div>
 
-        <!-- KPI Summary Strip -->
-        <div class="portal-kpi-strip" v-if="dashboardData">
-            <div class="portal-kpi-item">
-                <span class="portal-kpi-value">{{ dashboardData.openEstimateCount }}</span>
-                <span class="portal-kpi-label">Open Estimates</span>
+        <!-- Cross-App Signals -->
+        <div class="portal-signals" v-if="!loading">
+            <div v-if="!hasAlerts" class="portal-signals-clear">
+                <i class="pi pi-check-circle" />
+                <span>No active alerts across all modules</span>
             </div>
-            <div class="portal-kpi-divider" />
-            <div class="portal-kpi-item" :class="{ 'portal-kpi-warn': dashboardData.craftShortagesCount > 0 }">
-                <span class="portal-kpi-value">{{ dashboardData.craftShortagesCount }}</span>
-                <span class="portal-kpi-label">Craft Shortages</span>
-            </div>
-            <div class="portal-kpi-divider" />
-            <div class="portal-kpi-item" :class="{ 'portal-kpi-warn': dashboardData.jobsEndingSoonCount > 0 }">
-                <span class="portal-kpi-value">{{ dashboardData.jobsEndingSoonCount }}</span>
-                <span class="portal-kpi-label">Jobs Ending Soon</span>
-            </div>
-            <div class="portal-kpi-divider" />
-            <div class="portal-kpi-item">
-                <span class="portal-kpi-value">{{ dashboardData.peopleFreeSoonCount }}</span>
-                <span class="portal-kpi-label">People Free Soon</span>
-            </div>
-            <div class="portal-kpi-divider" />
-            <div class="portal-kpi-item" :class="{ 'portal-kpi-warn': dashboardData.pendingFcoCount > 0 }">
-                <span class="portal-kpi-value">{{ dashboardData.pendingFcoCount }}</span>
-                <span class="portal-kpi-label">Pending FCOs</span>
-            </div>
-            <div class="portal-kpi-divider" />
-            <div class="portal-kpi-item" :class="{ 'portal-kpi-alert': dashboardData.alertCount > 0 }">
-                <span class="portal-kpi-value">{{ dashboardData.alertCount }}</span>
-                <span class="portal-kpi-label">Alerts</span>
-            </div>
+            <template v-else>
+                <div v-if="dashboardData.craftShortagesCount > 0"
+                    class="portal-signal portal-signal-warn"
+                    @click="router.push('/scheduling/coverage')">
+                    <i class="pi pi-users" />
+                    <div class="portal-signal-body">
+                        <span class="portal-signal-count">{{ dashboardData.craftShortagesCount }}</span>
+                        <span class="portal-signal-label">Open Staffing Gaps</span>
+                    </div>
+                    <i class="pi pi-arrow-right portal-signal-arrow" />
+                </div>
+                <div v-if="dashboardData.pendingFcoCount > 0"
+                    class="portal-signal portal-signal-warn"
+                    @click="router.push('/planning/step-out-plans')">
+                    <i class="pi pi-file-edit" />
+                    <div class="portal-signal-body">
+                        <span class="portal-signal-count">{{ dashboardData.pendingFcoCount }}</span>
+                        <span class="portal-signal-label">Pending Release Gates</span>
+                    </div>
+                    <i class="pi pi-arrow-right portal-signal-arrow" />
+                </div>
+                <div v-if="dashboardData.jobsEndingSoonCount > 0"
+                    class="portal-signal portal-signal-info"
+                    @click="router.push('/scheduling/roll-off')">
+                    <i class="pi pi-calendar-times" />
+                    <div class="portal-signal-body">
+                        <span class="portal-signal-count">{{ dashboardData.jobsEndingSoonCount }}</span>
+                        <span class="portal-signal-label">Jobs Ending This Month</span>
+                    </div>
+                    <i class="pi pi-arrow-right portal-signal-arrow" />
+                </div>
+            </template>
         </div>
 
         <!-- Recent Estimates -->
@@ -89,7 +96,7 @@
                         <span class="portal-recent-client">{{ est.client }}</span>
                     </div>
                     <div class="portal-recent-status">
-                        <span :class="statusClass(est.status)">{{ est.status }}</span>
+                        <Tag :value="est.status" :severity="statusSeverity(est.status)" />
                     </div>
                     <div class="portal-recent-arrow">
                         <i class="pi pi-chevron-right" />
@@ -144,6 +151,11 @@ interface PortalDashboardDto {
 
 const userName = computed(() => userStore.username || 'there');
 const companyName = computed(() => userStore.companyName || userStore.companyCode || '');
+const hasAlerts = computed(() =>
+    (dashboardData.value?.craftShortagesCount ?? 0) > 0 ||
+    (dashboardData.value?.pendingFcoCount ?? 0) > 0 ||
+    (dashboardData.value?.jobsEndingSoonCount ?? 0) > 0
+);
 
 const appTiles = computed(() => [
     {
@@ -178,12 +190,12 @@ const appTiles = computed(() => [
     },
 ]);
 
-function statusClass(status: string) {
+function statusSeverity(status: string) {
     const s = status?.toLowerCase();
-    if (s === 'awarded') return 'portal-status portal-status-awarded';
-    if (s === 'pending' || s === 'submitted') return 'portal-status portal-status-pending';
-    if (s === 'lost' || s === 'canceled') return 'portal-status portal-status-lost';
-    return 'portal-status portal-status-draft';
+    if (s === 'awarded') return 'success';
+    if (s === 'pending' || s === 'submitted') return 'warn';
+    if (s === 'lost' || s === 'canceled') return 'danger';
+    return 'secondary';
 }
 
 async function loadDashboard() {
@@ -331,47 +343,71 @@ onMounted(loadDashboard);
     color: var(--primary-color);
 }
 
-/* KPI Strip */
-.portal-kpi-strip {
-    background: var(--surface-card);
-    border: 1px solid var(--surface-border);
-    border-radius: 10px;
+/* Cross-App Signals */
+.portal-signals {
     display: flex;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    gap: 0;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
-.portal-kpi-item {
+.portal-signals-clear {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 0 1.5rem;
-    flex: 1;
-    min-width: 90px;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-color-secondary);
+    padding: 0.6rem 0.75rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
 }
-.portal-kpi-divider {
-    width: 1px;
-    height: 36px;
-    background: var(--surface-border);
+.portal-signals-clear i { color: var(--green-500, #22c55e); }
+.portal-signal {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex: 1;
+    min-width: 220px;
+}
+.portal-signal:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.portal-signal > .pi:first-child {
+    font-size: 1.1rem;
     flex-shrink: 0;
 }
-.portal-kpi-value {
-    font-size: 1.5rem;
+.portal-signal-warn > .pi:first-child { color: var(--orange-500, #f97316); }
+.portal-signal-info > .pi:first-child { color: var(--primary-color); }
+.portal-signal-body {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex: 1;
+}
+.portal-signal-count {
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-color);
     line-height: 1;
 }
-.portal-kpi-label {
-    font-size: 0.72rem;
+.portal-signal-warn .portal-signal-count { color: var(--orange-500, #f97316); }
+.portal-signal-label {
+    font-size: 0.78rem;
     color: var(--text-color-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-top: 0.25rem;
-    text-align: center;
 }
-.portal-kpi-warn .portal-kpi-value { color: var(--orange-500, #f97316); }
-.portal-kpi-alert .portal-kpi-value { color: var(--red-500, #ef4444); }
+.portal-signal-arrow {
+    color: var(--text-color-secondary);
+    opacity: 0.4;
+    font-size: 0.8rem;
+    transition: opacity 0.12s;
+}
+.portal-signal:hover .portal-signal-arrow { opacity: 1; color: var(--primary-color); }
 
 /* Recent Estimates */
 .portal-section-title {

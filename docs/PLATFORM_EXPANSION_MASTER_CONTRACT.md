@@ -56,11 +56,13 @@ Estimating owns:
 
 Planning / PM owns:
 
-- Step-out plans, work breakdown, execution sequencing, permit/tool/material staging, work packages, FCO/change planning, operational actuals, and estimate/FCO execution variance.
+- CommercialAuthorizations, Projects, WorkOrders (first-class PM entity — the operational authorization unit that gates step-out plans, FCOs, and actuals), step-out plans, work breakdown, execution sequencing, permit/tool/material staging, work packages, FCO/change planning, operational actuals, and estimate/FCO execution variance.
+- Gantt charts and PM calendars live here and ONLY here. Scheduling has no Gantt, no PM timeline.
 
 Scheduling owns:
 
-- Resources/people, crafts, skills/certifications, availability, PTO/blackout, crews where needed, assignments, conflicts, coverage gaps, roll-off, ending-soon, and available-soon.
+- Resources/people, crafts, skills/certifications, availability, PTO/blackout, assignments, conflicts, coverage gaps, roll-off, ending-soon, and available-soon.
+- Scheduling is personnel assignment only — who goes where, when, and with what craft/cert. Scheduling does not manage project timelines, WBS, or phase structures.
 
 Portal owns:
 
@@ -74,15 +76,12 @@ The platform flow is:
 
 Estimating -> Planning -> Scheduling -> Actuals/Variance -> Portal/Forecast
 
-Scheduling demand sources:
+Scheduling demand has two states (see Scheduling Requirements section for full model):
 
-- Estimates that represent real schedulable jobs/work, per documented status rules.
-- Approved staffing plans where `ConvertedEstimateId IS NULL`.
-- Planning work packages ready for scheduling.
+- **Forecast demand** (visible, not assignable): awarded Estimates; approved unconverted StaffingPlans.
+- **Released demand** (visible, assignable): WorkPackages with `ReadyForScheduling = true` backed by a released WorkOrder.
 
-Hard dedupe rule:
-
-- If `StaffingPlan.ConvertedEstimateId != null`, that staffing plan must not produce independent demand. The linked estimate is the source of truth.
+Hard dedupe rule: If `StaffingPlan.ConvertedEstimateId != null`, that staffing plan must not produce independent demand. The linked estimate is the source of truth.
 
 Planning output:
 
@@ -108,20 +107,36 @@ Each plan needs source links to estimate, staffing plan, FCO/change, job, work p
 
 ## Scheduling Requirements
 
-Scheduling must support:
+Scheduling is **personnel assignment only**. It answers: "Who do we have, what craft are they, and where do they need to go?" It does not own project timelines, WBS, or PM planning structures — those live in Planning.
 
-- Resources/people.
-- Crafts/positions.
-- Certifications/skills.
-- Availability/PTO/blackout blocks.
-- Assignments.
-- Conflict detection.
-- Coverage/shortage calculations.
-- Ending-soon jobs and assignments.
-- Available-soon resources.
-- Suggested matches where feasible.
+### Demand State Model (LOCKED)
 
-Matching must consider craft, skills/certs, availability, date range, and branch/location where feasible.
+Scheduling demand has two mutually exclusive states. Both are visible on the jobs board. Only Released demand is assignable.
+
+**Forecast Demand** — visible, not assignable:
+- Source: awarded Estimates not yet backed by a released WorkOrder; approved unconverted StaffingPlans.
+- Jobs board displays `Forecast` badge. Assign button is disabled.
+- Purpose: lets schedulers see upcoming work and begin workforce planning before formal release.
+
+**Released / Assignable Demand** — visible and assignable:
+- Source: WorkPackages with `ReadyForScheduling = true` where `WorkOrder.Status IN ('Released', 'InProgress')`.
+- Jobs board displays `Released` badge. Assign button is active.
+- Assignment creation is blocked server-side against Forecast demand — enforced in AssignmentController, not just the UI.
+
+Hard rule: users must not assign people to work that has not been formally released through a WorkOrder.
+
+### Scheduling Module Ownership
+
+- **Resource Master** belongs to Scheduling. Identity, craft, region, availability, certifications, import, future AD sync.
+- **Craft reference table** belongs to Scheduling. Admin-managed; required for all assignments.
+- **Certification reference table** belongs to Scheduling. Admin-managed; includes expiration tracking.
+- **Assignments** belong to Scheduling. Every assignment requires a CraftId from the Craft reference table — no free-text craft on any assignment record.
+
+### Detailed Scheduling Specs
+
+UI behavior, data model fields, demand summary drawer, assignment modal, Resource Master form, CSV import, and TODO task list are in:
+- `docs/PROJECT_SCHEDULING_PERSONNEL_SPEC.md` — spec and behavior
+- `docs/PROJECT_SCHEDULING_PERSONNEL_TODO.md` — implementation tasks
 
 ## Actuals, Delta, And FCO Requirements
 
@@ -171,6 +186,8 @@ Claude implementation work must maintain:
 - `docs/IMPLEMENTATION_WORKLOG.md`
 - `docs/REGRESSION_CHECKLIST.md`
 - `docs/TEST_RUN_LOG.md`
+- `docs/PROJECT_SCHEDULING_PERSONNEL_SPEC.md` (scheduling spec — behavior and data model)
+- `docs/PROJECT_SCHEDULING_PERSONNEL_TODO.md` (scheduling implementation tasks)
 
 Codex QA work must maintain:
 

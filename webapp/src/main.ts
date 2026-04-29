@@ -47,11 +47,15 @@ app.config.globalProperties.$appState = reactive({
 // Restore saved theme preference before first paint.
 useTheme().initTheme();
 
-// Restore JWT token to axios headers if already logged in.
 const apiStore = useApiStore();
-apiStore.setToken();
 
-// Mount immediately — bypass mode never shows the login page (isAuthenticated always true).
-// tryAutoLogin runs in background to get a real token for API calls.
-app.mount('#app');
-tryAutoLogin().then(() => apiStore.setToken()).catch(() => {});
+// In bypass mode, await a real token before mounting so components never call
+// the API without an Authorization header (the race condition that showed
+// "Could not load data" on first navigation).
+(async () => {
+    if (import.meta.env.VITE_BYPASS_AUTH === 'true') {
+        await tryAutoLogin().catch(() => {});
+    }
+    apiStore.setToken();
+    app.mount('#app');
+})();

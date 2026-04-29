@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="planning-view">
         <div class="planning-view-header">
             <div class="planning-view-header-left">
@@ -189,7 +189,7 @@ function statusSeverity(s: string) {
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function fmtCurrency(v: number) {
@@ -215,7 +215,7 @@ async function saveFco() {
     }
     saving.value = true;
     try {
-        await apiStore.api.value.post('/api/v1/planning/fco', { ...form.value, status: 'Draft', date: new Date() });
+        await apiStore.api.post('/api/v1/planning/fco', { ...form.value, status: 'Draft', date: new Date() });
         formVisible.value = false;
         toast.add({ severity: 'success', summary: 'FCO Created', life: 2000 });
         await load();
@@ -236,7 +236,7 @@ function openDetail(fco: any) {
 
 async function updateFcoStatus(fco: any, status: string) {
     try {
-        const { data } = await apiStore.api.value.put(`/api/v1/planning/fco/${fco.fcoDocumentId}`, { ...fco, status });
+        const { data } = await apiStore.api.put(`/api/v1/planning/fco/${fco.fcoDocumentId}`, { ...fco, status });
         const idx = fcos.value.findIndex(f => f.fcoDocumentId === fco.fcoDocumentId);
         if (idx >= 0) fcos.value[idx] = data;
         if (detailFco.value?.fcoDocumentId === fco.fcoDocumentId) detailFco.value = data;
@@ -249,7 +249,7 @@ async function updateFcoStatus(fco: any, status: string) {
 async function generateDoc(fco: any) {
     if (!fco) return;
     try {
-        const { data } = await apiStore.api.value.post(`/api/v1/planning/fco/${fco.fcoDocumentId}/generate-document`);
+        const { data } = await apiStore.api.post(`/api/v1/planning/fco/${fco.fcoDocumentId}/generate-document`);
         const blob = new Blob([data], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -263,7 +263,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.value.get('/api/v1/planning/fco');
+        const { data } = await apiStore.api.get('/api/v1/planning/fco');
         fcos.value = data;
     } catch {
         error.value = true;

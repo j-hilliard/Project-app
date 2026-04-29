@@ -127,6 +127,68 @@ body {
     background: color-mix(in srgb, #23395b 78%, transparent);
 }
 
+/* ── Enterprise Grid: shared compact density for Scheduling + PM operational tables ── */
+/* Applied via class="ent-grid" on <DataTable>. Never apply to Estimating tables.       */
+
+.ent-grid.p-datatable .p-datatable-thead > tr > th {
+    padding: 0.28rem 0.75rem !important;
+    font-size: 0.68rem !important;
+}
+
+.ent-grid.p-datatable .p-datatable-tbody > tr > td {
+    padding: 0 0.75rem !important;
+    font-size: 0.82rem !important;
+    height: 44px;
+    max-height: 44px;
+    line-height: 44px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Truncate text in ent-grid name/label cells */
+.ent-grid .ent-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
+}
+
+/* Compact tags/badges inside ent-grid */
+.ent-grid .p-tag {
+    font-size: 0.65rem !important;
+    padding: 0.1rem 0.45rem !important;
+    line-height: 1.5 !important;
+    height: 20px;
+}
+
+/* Action buttons: dim until row hover */
+.ent-grid.p-datatable .p-datatable-tbody > tr .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    justify-content: flex-end;
+}
+.ent-grid.p-datatable .p-datatable-tbody > tr .row-actions .p-button {
+    opacity: 0.3;
+    transition: opacity 0.1s ease;
+}
+.ent-grid.p-datatable .p-datatable-tbody > tr:hover .row-actions .p-button {
+    opacity: 1;
+}
+
+/* Cert overflow chip */
+.ent-grid .cert-overflow {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-color-secondary);
+    background: var(--surface-ground);
+    border: 1px solid var(--surface-border);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    line-height: 1.5;
+}
+
 .p-dropdown {
     background: color-mix(in srgb, var(--shell-surface-alt) 75%, transparent) !important;
     border-color: var(--shell-border) !important;

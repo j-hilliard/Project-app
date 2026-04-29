@@ -21,7 +21,7 @@ export const useAppStore = defineStore('app', () => {
     const menu = computed(() => {
         const userItems = [...currentApp.value.menu.user];
 
-        if (userStore.isAdmin || userStore.isAnalytics) {
+        if ((userStore.isAdmin || userStore.isAnalytics) && currentApp.value.baseSlug === 'estimating') {
             userItems.push({
                 label: 'Global Analytics',
                 icon: 'pi pi-fw pi-globe',

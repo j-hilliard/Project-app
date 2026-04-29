@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="sched-view">
         <div class="sched-view-header">
             <div>
@@ -22,30 +22,44 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="assignmentId" size="small"
-            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
-            <Column field="resource.name" header="Resource" sortable />
-            <Column field="jobName" header="Job" sortable />
-            <Column field="craftCode" header="Craft" style="width:90px">
+            class="ent-grid" :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
+            <Column field="resource.name" header="Resource" style="width:160px" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.resource?.name }}</span>
+                </template>
+            </Column>
+            <Column field="jobName" header="Job" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.jobName }}</span>
+                </template>
+            </Column>
+            <Column field="craftCode" header="Craft" style="width:72px">
                 <template #body="{ data }">
                     <Tag :value="data.craftCode" severity="info" />
                 </template>
             </Column>
-            <Column field="shift" header="Shift" style="width:90px" />
-            <Column header="Start" style="width:110px" sortable sortField="start">
+            <Column field="shift" header="Shift" style="width:80px">
+                <template #body="{ data }">
+                    <Tag :value="data.shift" severity="secondary" />
+                </template>
+            </Column>
+            <Column header="Start" style="width:100px" sortable sortField="start">
                 <template #body="{ data }">{{ fmtDate(data.start) }}</template>
             </Column>
-            <Column header="End" style="width:110px" sortable sortField="end">
+            <Column header="End" style="width:100px" sortable sortField="end">
                 <template #body="{ data }">{{ fmtDate(data.end) }}</template>
             </Column>
-            <Column field="status" header="Status" style="width:100px">
+            <Column field="status" header="Status" style="width:96px">
                 <template #body="{ data }">
                     <Tag :value="data.status" :severity="statusSeverity(data.status)" />
                 </template>
             </Column>
-            <Column header="" style="width:90px">
+            <Column header="" style="width:68px">
                 <template #body="{ data }">
-                    <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
-                    <Button icon="pi pi-trash" text severity="danger" size="small" @click="confirmDelete(data)" />
+                    <div class="row-actions">
+                        <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
+                        <Button icon="pi pi-trash" text severity="danger" size="small" @click="confirmDelete(data)" />
+                    </div>
                 </template>
             </Column>
             <template #empty>
@@ -144,7 +158,7 @@ function applyFilters() { /* computed */ }
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function statusSeverity(s: string) {
@@ -208,10 +222,10 @@ async function saveAssignment() {
         };
         let data: any;
         if (editMode.value && editId.value) {
-            const resp = await apiStore.api.value.put(`/api/v1/scheduling/assignments/${editId.value}`, payload);
+            const resp = await apiStore.api.put(`/api/v1/scheduling/assignments/${editId.value}`, payload);
             data = resp.data;
         } else {
-            const resp = await apiStore.api.value.post('/api/v1/scheduling/assignments', payload);
+            const resp = await apiStore.api.post('/api/v1/scheduling/assignments', payload);
             data = resp.data;
         }
         formVisible.value = false;
@@ -236,7 +250,7 @@ function confirmDelete(a: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.value.delete(`/api/v1/scheduling/assignments/${a.assignmentId}`);
+                await apiStore.api.delete(`/api/v1/scheduling/assignments/${a.assignmentId}`);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -251,9 +265,9 @@ async function load() {
     error.value = false;
     try {
         const [assignResp, resResp, jobsResp] = await Promise.all([
-            apiStore.api.value.get('/api/v1/scheduling/assignments'),
-            apiStore.api.value.get('/api/v1/scheduling/resources'),
-            apiStore.api.value.get('/api/v1/scheduling/jobs'),
+            apiStore.api.get('/api/v1/scheduling/assignments'),
+            apiStore.api.get('/api/v1/scheduling/resources'),
+            apiStore.api.get('/api/v1/scheduling/jobs'),
         ]);
         assignments.value = assignResp.data;
         resources.value = resResp.data;

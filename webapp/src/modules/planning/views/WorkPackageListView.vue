@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="planning-view">
         <div class="planning-view-header">
             <div class="planning-view-header-left">
@@ -106,13 +106,13 @@ function statusSeverity(s: string) {
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 async function toggleReady(pkg: any) {
     const newVal = !pkg.readyForScheduling;
     try {
-        await apiStore.api.value.put(`/api/v1/planning/work-packages/${pkg.packageId}`, {
+        await apiStore.api.put(`/api/v1/planning/work-packages/${pkg.packageId}`, {
             ...pkg,
             readyForScheduling: newVal,
         });
@@ -131,7 +131,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.value.get('/api/v1/planning/work-packages');
+        const { data } = await apiStore.api.get('/api/v1/planning/work-packages');
         packages.value = data;
     } catch {
         error.value = true;

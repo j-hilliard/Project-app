@@ -433,7 +433,7 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 - [ ] Verify project-planning domain model depth.
 - **Status:** Upcoming / queued from Joseph's 2026-04-28 requirements.
 - **Problem:** A generic task list or simple calendar would miss the core requirement: project -> phase -> task -> subtask -> step-out plan, with baselines, milestones, planned/actual dates, variance, Gantt/calendar views, and drill-down.
-- **Expected behavior:** The plan defines entities/relationships for ProjectPlan, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, TimelineBaseline, TimelineVariance, CalendarEntry/equivalent, audit/status/ownership fields, and hierarchy/dependency storage.
+- **Expected behavior:** The plan defines entities/relationships for Project, ProjectTimeline, ProjectPhase, PlanTask, PlanTaskDependency, PlanMilestone, StepOutPlan, StepOutStep, StepOutSubStep, TaskAssignment, TaskScheduleStatus, TaskProgressSnapshot, TimelineBaseline, TimelineVariance, CalendarEntry/equivalent, audit/status/ownership fields, and hierarchy/dependency storage.
 - **Likely files:** `PROJECT_PLANNING_DATA_MODEL.md`, `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_UI_MAP.md`.
 - **Verification required:** Codex confirms each required entity/capability is present, ownership is stated, fields/relationships are specified, and performance/migration risks for deep hierarchies are discussed.
 - **Regression checklist:** `QA-PLAN-007`, `QA-PLAN-009`.
@@ -448,6 +448,64 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 - **Likely files:** `PROJECT_PLANNING_MASTER_PLAN.md`, `PROJECT_PLANNING_DATA_MODEL.md`, `PROJECT_PLANNING_UI_MAP.md`.
 - **Verification required:** Codex checks the traceability model and ahead/behind formulas against Joseph's requirements and flags any missing source-of-truth or data-integrity rules.
 - **Regression checklist:** `QA-PLAN-008`, `QA-PLAN-010`, `QA-FCO-002`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-024: End-To-End Project Lifecycle Master Docs Must Be Created Before Coding
+
+- [ ] Verify Claude creates the lifecycle operating model docs before implementation.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 lifecycle requirements.
+- **Problem:** This new prompt expands scope beyond Planning/Gantt into the full lifecycle: estimating, authorization, project initiation, work orders, scheduling, execution, actuals, change control, closeout, and lessons learned. Claude must not code before producing the architecture package.
+- **Expected behavior:** Claude creates/updates `PROJECT_LIFECYCLE_MASTER_PLAN.md`, `PROJECT_DATA_OWNERSHIP_AND_TRACEABILITY.md`, `PROJECT_STAGE_GATE_AND_STATUS_MODEL.md`, `PROJECT_ACTUALS_AND_VARIANCE_MODEL.md`, and `PROJECT_PLANNING_MASTER_TODO.md` under `docs/`. The docs must be grounded in actual repo paths and current models/controllers/migrations/docs.
+- **Likely files:** `docs/PROJECT_LIFECYCLE_MASTER_PLAN.md`, `docs/PROJECT_DATA_OWNERSHIP_AND_TRACEABILITY.md`, `docs/PROJECT_STAGE_GATE_AND_STATUS_MODEL.md`, `docs/PROJECT_ACTUALS_AND_VARIANCE_MODEL.md`, `docs/PROJECT_PLANNING_MASTER_TODO.md`.
+- **Verification required:** Codex confirms all five docs exist, are repo-grounded, answer the 10 required questions, and do not claim implementation. Codex must flag any coding/source change under this planning-only gate unless Joseph separately approved implementation.
+- **Regression checklist:** `QA-LIFE-001`, `QA-PLAT-006`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-025: Lifecycle Plan Must Model Estimate -> Authorization -> Project -> WorkOrder Gates
+
+- [ ] Verify commercial authorization and work-release gates.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 lifecycle requirements.
+- **Problem:** The system must not model Estimate -> PO automatically. It needs a flexible commercial authorization concept and a WorkOrder release gate so executable work cannot float without approved commercial traceability.
+- **Expected behavior:** The plan defines Estimate as the commercial baseline, CommercialAuthorization as PO/signed proposal/contract/NTP/work authorization/release order, Project as the execution umbrella, and WorkOrder as released execution package. It must support one estimate to many work orders and one project to many work orders.
+- **Likely files:** lifecycle docs, ownership/traceability docs, stage-gate docs.
+- **Verification required:** Codex checks that rules are explicit: no released WorkOrder without approved Estimate + valid CommercialAuthorization; no StepOutPlan without WorkOrder; portal KPI language uses `Projects at Risk` rather than raw pending FCO count.
+- **Regression checklist:** `QA-LIFE-002`, `QA-LIFE-003`, `QA-PLAT-010`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-026: Lifecycle Plan Must Define FCO, Actuals, Variance, And Authorized-Value Risk
+
+- [ ] Verify change control and actuals operating model.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 lifecycle requirements.
+- **Problem:** Actuals are the truth and FCO/change order is controlled business change. The plan must cover both cost and billable actuals, not only charged values.
+- **Expected behavior:** The plan defines FCO as a first-class controlled object tied to Estimate and WorkOrder, with impacted tasks/steps where appropriate. It defines ActualEntry/equivalent tied to WorkOrder, optional task/step/substep/FCO, actual cost, billable amount, labor/equipment/material/subcontract values, actual start/finish, completion, estimate-vs-actual, FCO-vs-actual, project/work-order/task rollups, authorized value vs forecast/actual risk, and future estimating feedback.
+- **Likely files:** lifecycle docs, actuals/variance docs, ownership/traceability docs, stage-gate docs.
+- **Verification required:** Codex verifies no orphan FCO/actuals model is accepted, no actuals without WorkOrder linkage, and forecast/actual exceeding authorized value is treated as risk.
+- **Regression checklist:** `QA-ACT-002`, `QA-FCO-003`, `QA-LIFE-004`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-027: Lifecycle Plan Must Define Stage Gates, Status Models, Closeout, And Lessons Learned
+
+- [ ] Verify full project lifecycle status model.
+- **Status:** Upcoming / queued from Joseph's 2026-04-28 lifecycle requirements.
+- **Problem:** The platform needs more than screens. It needs lifecycle controls from opportunity through closeout and historical estimating feedback.
+- **Expected behavior:** The plan maps the lifecycle through opportunity/bid intake, estimate development, commercial authorization, project initiation, planning/PM, work release, scheduling, execution, monitoring/controlling, change control, actuals/variance/financial learning, and closeout. It also maps the PM lifecycle lens: initiating, planning, executing, monitoring/controlling, closing.
+- **Likely files:** lifecycle master plan, stage-gate/status model, actuals/variance model, planning TODO.
+- **Verification required:** Codex checks status models for Estimate, Project, WorkOrder, Task/Step/SubStep, milestones, at-risk/on-track/late rules, stage transitions/gates, closeout state, and lessons learned/future-estimating loop.
+- **Regression checklist:** `QA-LIFE-005`, `QA-LIFE-006`, `QA-PLAN-010`.
+- **Reopened reason:** N/A.
+
+### PLATFORM-028: Developer Handoff Docs Must Be Canonical And Conflict-Free
+
+- [x] Verify the handoff package is canonical and stale planning docs are reconciled.
+- **Status:** Completed by Codex on 2026-04-28 after Joseph authorized Codex to perform doc cleanup.
+- **Problem:** The lifecycle docs are directionally strong, but the full doc set is not yet safe for developer handoff. `PROJECT_PLANNING_MASTER_PLAN.md` and `PROJECT_PLANNING_DATA_MODEL.md` still contain stale/conflicting guidance against the newer lifecycle model.
+- **Conflicts to resolve:** `ProjectPlan` vs `Project`, `TaskActual` vs `ActualEntry`, in-house SVG Gantt vs install/use a Gantt library, and `StepOutSubStep` as MVP leaf level vs post-MVP-only.
+- **Expected behavior:** Claude creates `docs/PROJECT_HANDOFF_INDEX.md` with final approved reading order, canonical source of truth by topic, superseded/archived docs, and unresolved decisions if any. Stale docs are updated, archived, or clearly marked superseded so developers do not treat them as equal truth.
+- **Canonical docs:** `docs/PLATFORM_EXPANSION_MASTER_CONTRACT.md`, `docs/PROJECT_LIFECYCLE_MASTER_PLAN.md`, `docs/PROJECT_DATA_OWNERSHIP_AND_TRACEABILITY.md`, `docs/PROJECT_PLANNING_UI_MAP.md`, `docs/PROJECT_PLANNING_MASTER_TODO.md`, `docs/PLATFORM_REQUIREMENTS_TRACEABILITY.md`.
+- **Do not use as source of truth until reconciled:** `docs/PROJECT_PLANNING_MASTER_PLAN.md`, `docs/PROJECT_PLANNING_DATA_MODEL.md`.
+- **Verification required:** Codex confirms the handoff index exists, the canonical stack is explicit, stale docs cannot reasonably be mistaken for current truth, and the four named conflicts are resolved in favor of the lifecycle model unless Joseph explicitly approves a different choice.
+- **Regression checklist:** `QA-LIFE-007`, `QA-PLAT-003`.
+- **Verification evidence:** `docs/PROJECT_HANDOFF_INDEX.md` created with canonical reading order/source-of-truth/locked decisions/superseded docs. `docs/PROJECT_PLANNING_MASTER_PLAN.md` and `docs/PROJECT_PLANNING_DATA_MODEL.md` are tombstoned. `docs/PROJECT_PLANNING_MASTER_TODO.md` and `docs/PROJECT_PLANNING_UI_MAP.md` now use `Project`, `ProjectDetailView`, `/api/v1/projects`, and `ActualEntry`; `StepOutSubStep` remains in MVP scope. Searches confirmed no active canonical-doc references to `ProjectPlan`, `ProjectPlanView`, `ProjectPlans`, `TaskActual`, `/api/v1/project-plans`, `DbSet<ProjectPlan>`, `DbSet<TaskActual>`, or `dhtmlx-gantt`; remaining matches are archived/superseded context only.
 - **Reopened reason:** N/A.
 
 

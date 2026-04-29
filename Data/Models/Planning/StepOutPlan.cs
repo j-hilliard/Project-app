@@ -21,6 +21,10 @@ public class StepOutPlan
     public string Status { get; set; } = "Draft";
     public string? Notes { get; set; }
 
+    // WorkOrder link — set when plan is promoted into execution lifecycle
+    public int? WorkOrderId { get; set; }
+    public WorkOrder? WorkOrder { get; set; }
+
     public string CreatedBy { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

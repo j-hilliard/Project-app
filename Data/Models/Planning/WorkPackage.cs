@@ -8,6 +8,9 @@ public class WorkPackage
     public int? PlanId { get; set; }
     public StepOutPlan? Plan { get; set; }
 
+    public int? WorkOrderId { get; set; }
+    public WorkOrder? WorkOrder { get; set; }
+
     // Traceability back to the source (estimate, staffing plan, FCO, or step-out plan)
     public string? SourceType { get; set; }
     public int? SourceId { get; set; }

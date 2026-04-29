@@ -1,9 +1,10 @@
 <template>
-    <div class="sched-view">
-        <div class="sched-view-header">
+    <div class="coverage-view">
+        <!-- Header -->
+        <div class="coverage-header">
             <div>
                 <h1>Craft Coverage</h1>
-                <p>Demand headcount vs assigned headcount by craft. Red rows indicate open positions.</p>
+                <p>Demand vs assigned headcount by craft. Single-click to select — double-click to drill down.</p>
             </div>
             <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
         </div>
@@ -12,151 +13,265 @@
             Could not load coverage data. Make sure the API is running.
         </Message>
 
-        <!-- Summary banner -->
-        <div class="coverage-summary" v-if="coverage.length">
-            <div class="coverage-summary-item">
-                <span class="coverage-summary-value">{{ shortageCount }}</span>
-                <span class="coverage-summary-label">Crafts Short</span>
+        <!-- KPI Strip -->
+        <div class="kpi-strip">
+            <div class="kpi-item">
+                <span class="kpi-value" :class="{ 'kpi-warn': shortageCount > 0 }">
+                    {{ loading ? '—' : shortageCount }}
+                </span>
+                <span class="kpi-label">Crafts Short</span>
             </div>
-            <div class="coverage-summary-divider" />
-            <div class="coverage-summary-item">
-                <span class="coverage-summary-value">{{ totalGap }}</span>
-                <span class="coverage-summary-label">Open Positions</span>
+            <div class="kpi-div" />
+            <div class="kpi-item">
+                <span class="kpi-value" :class="{ 'kpi-warn': openPositions > 0 }">
+                    {{ loading ? '—' : openPositions }}
+                </span>
+                <span class="kpi-label">Open Positions</span>
             </div>
-            <div class="coverage-summary-divider" />
-            <div class="coverage-summary-item">
-                <span class="coverage-summary-value">{{ totalAssigned }}</span>
-                <span class="coverage-summary-label">Assigned Today</span>
+            <div class="kpi-div" />
+            <div class="kpi-item">
+                <span class="kpi-value">{{ loading ? '—' : totalAssigned }}</span>
+                <span class="kpi-label">Assigned Today</span>
+            </div>
+            <div class="kpi-div" />
+            <div class="kpi-item">
+                <span class="kpi-value" :class="overallCoverageClass">
+                    {{ loading ? '—' : overallCoveragePct + '%' }}
+                </span>
+                <span class="kpi-label">Overall Coverage</span>
             </div>
         </div>
 
-        <DataTable :value="coverage" :loading="loading" stripedRows dataKey="craftCode" size="small"
-            selectionMode="single" @row-click="openSuggestions"
-            :rowClass="rowClass">
-            <Column field="craftTitle" header="Craft" sortable />
-            <Column field="demandCount" header="Demand" style="width:90px" />
-            <Column field="assignedCount" header="Assigned" style="width:90px" />
-            <Column field="gap" header="Gap" style="width:80px">
-                <template #body="{ data }">
-                    <span :class="data.gap > 0 ? 'gap-warn' : 'gap-ok'">
-                        {{ data.gap > 0 ? `–${data.gap}` : '✓' }}
-                    </span>
-                </template>
-            </Column>
-            <Column header="Coverage" style="width:200px">
-                <template #body="{ data }">
-                    <div class="coverage-bar-wrap">
-                        <div class="coverage-bar">
-                            <div class="coverage-bar-fill" :style="coverageBarStyle(data)" />
-                        </div>
-                        <span class="coverage-pct">{{ coveragePct(data) }}%</span>
-                    </div>
-                </template>
-            </Column>
-            <Column header="" style="width:130px">
-                <template #body="{ data }">
-                    <Button v-if="data.gap > 0" label="Suggestions" size="small" outlined @click.stop="openSuggestions({ data })" />
-                </template>
-            </Column>
-            <template #empty>
-                <span class="sched-empty">No coverage data. Ensure staffing plans are Approved and resources have active assignments.</span>
-            </template>
-        </DataTable>
-
-        <!-- Suggested Matches Panel -->
-        <Dialog v-model:visible="suggestVisible" :header="`Suggested Matches — ${selectedCraft?.craftTitle ?? ''}`" modal :style="{ width: '540px' }">
-            <div v-if="suggestLoading" class="suggest-loading">
-                <i class="pi pi-spin pi-spinner" /> Loading suggestions...
-            </div>
-            <div v-else-if="!matchesForCraft.length" class="sched-empty">
-                No available resources found for this craft. All resources may be assigned.
-            </div>
-            <div v-else class="suggest-list">
-                <div v-for="m in matchesForCraft" :key="m.resourceId" class="suggest-item">
-                    <div class="suggest-info">
-                        <span class="suggest-name">{{ m.resourceName }}</span>
-                        <Tag :value="m.craftCode" severity="info" />
-                        <Tag :value="m.reason" :severity="m.reason === 'Unassigned' ? 'success' : 'warning'" />
-                    </div>
-                    <div class="suggest-meta">
-                        <span>Available: {{ fmtDate(m.availableDate) }}</span>
-                        <span>Score: {{ m.matchScore }}</span>
-                        <span v-if="m.branch">{{ m.branch }}</span>
-                    </div>
-                    <Button label="Assign" size="small" outlined @click="startAssignFromMatch(m)" />
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="demand-toggle-group">
+                <span class="filter-label-sm">Demand</span>
+                <div class="demand-toggle">
+                    <button
+                        v-for="opt in demandStateOptions"
+                        :key="opt.value"
+                        class="toggle-btn"
+                        :class="{ active: demandState === opt.value }"
+                        @click="demandState = opt.value">
+                        {{ opt.label }}
+                    </button>
                 </div>
             </div>
-            <template #footer>
-                <Button label="Close" text @click="suggestVisible = false" />
+
+            <Dropdown
+                v-model="regionFilter"
+                :options="regionOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All Regions"
+                showClear
+                class="filter-dropdown" />
+
+            <Dropdown
+                v-model="branchFilter"
+                :options="branchOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All Branches"
+                showClear
+                class="filter-dropdown" />
+
+            <span class="filter-hint">
+                <i class="pi pi-info-circle" />
+                Single click = select &nbsp;·&nbsp; Double click = drill down
+            </span>
+        </div>
+
+        <!-- Coverage Bar Dashboard -->
+        <div class="coverage-dashboard">
+            <!-- Column labels -->
+            <div v-if="displayRows.length" class="dashboard-col-labels">
+                <span class="col-lbl-craft">Craft</span>
+                <span class="col-lbl-bar">Coverage</span>
+                <span class="col-lbl-stats">Demand / Assigned / Gap / %</span>
+            </div>
+
+            <!-- Skeleton loading -->
+            <template v-if="loading && !displayRows.length">
+                <div v-for="i in 7" :key="i" class="skeleton-row" :style="{ opacity: 1 - i * 0.1 }" />
             </template>
-        </Dialog>
+
+            <!-- Empty state -->
+            <div v-else-if="!loading && !displayRows.length" class="empty-state">
+                <i class="pi pi-chart-bar empty-icon" />
+                <p>No coverage data available.</p>
+                <p class="empty-sub">Ensure staffing plans are approved and resources have demand assigned.</p>
+            </div>
+
+            <!-- Bar rows -->
+            <CraftCoverageBar
+                v-for="row in displayRows"
+                :key="row.craftCode"
+                :craft="row"
+                :selected="selectedCraft?.craftCode === row.craftCode"
+                @click="selectCraft(row)"
+                @dblclick="openDrawer(row)" />
+        </div>
+
+        <!-- Craft Detail Drawer -->
+        <Sidebar
+            v-model:visible="drawerVisible"
+            position="right"
+            :style="{ width: 'clamp(380px, 40vw, 520px)' }"
+            class="craft-detail-sidebar">
+            <template #header>
+                <div class="sidebar-header">
+                    <i class="pi pi-chart-bar" style="color: var(--primary-color)" />
+                    <span>Craft Detail</span>
+                </div>
+            </template>
+            <CraftDetailDrawer
+                v-if="drawerCraft"
+                :craft="drawerCraft"
+                :suggestions="suggestionsForDrawer" />
+        </Sidebar>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useApiStore } from '@/stores/apiStore';
+import CraftCoverageBar from '../components/CraftCoverageBar.vue';
+import CraftDetailDrawer from '../components/CraftDetailDrawer.vue';
 
 const apiStore = useApiStore();
-const router = useRouter();
 
 const loading = ref(false);
 const error = ref(false);
 const coverage = ref<any[]>([]);
 const allMatches = ref<any[]>([]);
 
-const shortageCount = computed(() => coverage.value.filter(c => c.gap > 0).length);
-const totalGap = computed(() => coverage.value.reduce((s, c) => s + c.gap, 0));
-const totalAssigned = computed(() => coverage.value.reduce((s, c) => s + c.assignedCount, 0));
+// ── Normalize API response shape ─────────────────────────────────────────────
+// Existing endpoint: craftCode, craftTitle, demandCount, assignedCount, gap
+// Future endpoint adds: craftName, demandTotal, assignedTotal, demandReleased, demandForecast
 
-function rowClass(row: any) {
-    return row.gap > 0 ? 'coverage-row-short' : '';
+function normalize(row: any) {
+    const demand = row.demandTotal ?? row.demandCount ?? 0;
+    const assigned = row.assignedTotal ?? row.assignedCount ?? 0;
+    const gap = Math.max(0, demand - assigned);
+    const craftName = row.craftName ?? row.craftTitle ?? row.craftCode;
+    return { ...row, demand, assigned, gap, craftName };
 }
 
-function coveragePct(row: any) {
-    if (!row.demandCount) return 100;
-    return Math.min(100, Math.round(row.assignedCount / row.demandCount * 100));
-}
+const normalizedRows = computed(() => coverage.value.map(normalize));
 
-function coverageBarStyle(row: any) {
-    const pct = coveragePct(row);
-    const color = pct >= 100 ? 'var(--green-500, #22c55e)' : pct >= 70 ? 'var(--yellow-500, #eab308)' : 'var(--red-500, #ef4444)';
-    return { width: `${pct}%`, backgroundColor: color };
-}
+// ── Filters ──────────────────────────────────────────────────────────────────
 
-function fmtDate(d: string | null | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-}
+const demandState = ref<'all' | 'released' | 'forecast'>('all');
+const regionFilter = ref<string | null>(null);
+const branchFilter = ref<string | null>(null);
 
-// Suggestions panel
-const suggestVisible = ref(false);
-const suggestLoading = ref(false);
-const selectedCraft = ref<any>(null);
-const matchesForCraft = computed(() =>
-    selectedCraft.value ? allMatches.value.filter(m => m.craftCode === selectedCraft.value.craftCode) : []
+const demandStateOptions = [
+    { label: 'All',      value: 'all' },
+    { label: 'Released', value: 'released' },
+    { label: 'Forecast', value: 'forecast' },
+];
+
+const regionOptions = computed(() => {
+    const regions = [...new Set(allMatches.value.map((m: any) => m.region).filter(Boolean))];
+    return regions.map(r => ({ label: r, value: r }));
+});
+
+const branchOptions = computed(() => {
+    const branches = [...new Set(allMatches.value.map((m: any) => m.branch).filter(Boolean))];
+    return branches.map(b => ({ label: b, value: b }));
+});
+
+// ── Display rows: filtered + sorted by gap descending ────────────────────────
+
+const displayRows = computed(() => {
+    let rows = [...normalizedRows.value];
+
+    // demandState filter: only applies when rows carry the field (future endpoint)
+    if (demandState.value !== 'all') {
+        const stateAware = rows.filter(r => r.demandState != null);
+        if (stateAware.length) {
+            rows = rows.filter(r => r.demandState === demandState.value);
+        }
+    }
+
+    // Region / branch: cross-reference craft codes through allMatches
+    if (regionFilter.value) {
+        const regionCrafts = new Set(
+            allMatches.value
+                .filter((m: any) => m.region === regionFilter.value)
+                .map((m: any) => m.craftCode)
+                .filter(Boolean)
+        );
+        if (regionCrafts.size) rows = rows.filter(r => regionCrafts.has(r.craftCode));
+    }
+
+    if (branchFilter.value) {
+        const branchCrafts = new Set(
+            allMatches.value
+                .filter((m: any) => m.branch === branchFilter.value)
+                .map((m: any) => m.craftCode)
+                .filter(Boolean)
+        );
+        if (branchCrafts.size) rows = rows.filter(r => branchCrafts.has(r.craftCode));
+    }
+
+    return rows.sort((a, b) => b.gap - a.gap);
+});
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+
+const shortageCount = computed(() => normalizedRows.value.filter(r => r.gap > 0).length);
+const openPositions = computed(() =>
+    normalizedRows.value.reduce((s, r) => s + Math.max(0, r.gap), 0)
 );
+const totalAssigned = computed(() =>
+    normalizedRows.value.reduce((s, r) => s + (r.assigned ?? 0), 0)
+);
+const totalDemand = computed(() =>
+    normalizedRows.value.reduce((s, r) => s + (r.demand ?? 0), 0)
+);
+const overallCoveragePct = computed(() => {
+    if (!totalDemand.value) return 0;
+    return Math.round((totalAssigned.value / totalDemand.value) * 100);
+});
+const overallCoverageClass = computed(() => {
+    const pct = overallCoveragePct.value;
+    if (pct >= 80) return 'kpi-ok';
+    if (pct >= 40) return 'kpi-mid';
+    return 'kpi-warn';
+});
 
-async function openSuggestions(event: any) {
-    const row = event.data;
-    if (!row.gap || row.gap <= 0) return;
+// ── Selection + Drawer ───────────────────────────────────────────────────────
+
+const selectedCraft = ref<any>(null);
+const drawerVisible = ref(false);
+const drawerCraft = ref<any>(null);
+
+function selectCraft(row: any) {
+    selectedCraft.value = selectedCraft.value?.craftCode === row.craftCode ? null : row;
+}
+
+function openDrawer(row: any) {
+    drawerCraft.value = row;
     selectedCraft.value = row;
-    suggestVisible.value = true;
+    drawerVisible.value = true;
 }
 
-function startAssignFromMatch(_m: any) {
-    suggestVisible.value = false;
-    router.push('/scheduling/assignments');
-}
+const suggestionsForDrawer = computed(() => {
+    if (!drawerCraft.value) return [];
+    return allMatches.value.filter((m: any) => m.craftCode === drawerCraft.value.craftCode);
+});
+
+// ── Data load ────────────────────────────────────────────────────────────────
 
 async function load() {
     loading.value = true;
     error.value = false;
     try {
         const [covResp, matchResp] = await Promise.all([
-            apiStore.api.value.get('/api/v1/scheduling/coverage'),
-            apiStore.api.value.get('/api/v1/scheduling/suggested-matches'),
+            apiStore.api.get('/api/v1/scheduling/coverage'),
+            apiStore.api.get('/api/v1/scheduling/suggested-matches'),
         ]);
         coverage.value = covResp.data;
         allMatches.value = matchResp.data;
@@ -171,49 +286,199 @@ onMounted(load);
 </script>
 
 <style scoped>
-.sched-view { max-width: 1100px; margin: 0 auto; padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
-.sched-view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.sched-view-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
-.sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
+.coverage-view {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
 
-.coverage-summary {
+/* Header */
+.coverage-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.coverage-header h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+.coverage-header p {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.88rem;
+}
+
+/* KPI Strip */
+.kpi-strip {
     background: var(--surface-card);
     border: 1px solid var(--surface-border);
     border-radius: 10px;
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
-    gap: 0;
-    flex-wrap: wrap;
+    padding: 1rem 1.5rem;
 }
-.coverage-summary-item { display: flex; flex-direction: column; align-items: center; padding: 0 1.5rem; flex: 1; min-width: 80px; }
-.coverage-summary-divider { width: 1px; height: 30px; background: var(--surface-border); flex-shrink: 0; }
-.coverage-summary-value { font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.coverage-summary-label { font-size: 0.72rem; color: var(--text-color-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    padding: 0 1rem;
+}
+.kpi-div {
+    width: 1px;
+    height: 36px;
+    background: var(--surface-border);
+    flex-shrink: 0;
+}
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+}
+.kpi-label {
+    font-size: 0.68rem;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.25rem;
+    text-align: center;
+}
+.kpi-warn { color: var(--red-500, #ef4444); }
+.kpi-mid  { color: var(--yellow-500, #eab308); }
+.kpi-ok   { color: var(--green-500, #22c55e); }
 
-.gap-warn { color: var(--red-500, #ef4444); font-weight: 700; }
-.gap-ok { color: var(--green-600, #16a34a); font-weight: 600; }
-
-.coverage-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
-.coverage-bar { flex: 1; height: 8px; background: var(--surface-border); border-radius: 4px; overflow: hidden; }
-.coverage-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
-.coverage-pct { font-size: 0.78rem; color: var(--text-color-secondary); width: 35px; text-align: right; }
-
-:deep(.coverage-row-short) td { background: rgba(239, 68, 68, 0.05) !important; }
-
-.suggest-loading { display: flex; gap: 0.5rem; align-items: center; color: var(--text-color-secondary); }
-.suggest-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.suggest-item {
-    background: var(--surface-ground);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
+/* Filter bar */
+.filter-bar {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
 }
-.suggest-info { display: flex; align-items: center; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
-.suggest-name { font-weight: 600; font-size: 0.9rem; }
-.suggest-meta { font-size: 0.78rem; color: var(--text-color-secondary); display: flex; gap: 0.75rem; width: 100%; }
+.demand-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+.filter-label-sm {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-color-secondary);
+}
+.demand-toggle {
+    display: flex;
+    background: var(--surface-ground);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 1px;
+}
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+.toggle-btn:hover { color: var(--text-color); background: var(--surface-border); }
+.toggle-btn.active { background: var(--primary-color); color: #fff; }
+
+.filter-dropdown { width: 150px; font-size: 0.82rem; }
+:deep(.filter-dropdown .p-dropdown-label) { font-size: 0.82rem; padding: 0.4rem 0.6rem; }
+:deep(.filter-dropdown .p-dropdown) { height: 34px; }
+
+.filter-hint {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Dashboard */
+.coverage-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.dashboard-col-labels {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.25rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-color-secondary);
+}
+.col-lbl-craft { min-width: 220px; flex-shrink: 0; }
+.col-lbl-bar   { flex: 1; }
+.col-lbl-stats { min-width: 300px; text-align: right; flex-shrink: 0; }
+
+/* Skeleton */
+.skeleton-row {
+    height: 58px;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Empty */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-color-secondary);
+    font-size: 0.88rem;
+}
+.empty-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    display: block;
+    margin-bottom: 1rem;
+}
+.empty-sub { font-size: 0.8rem; opacity: 0.7; margin-top: 0.25rem; }
+
+/* Sidebar header */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+/* Override PrimeVue Sidebar styles */
+:deep(.craft-detail-sidebar .p-sidebar-header) {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--surface-border);
+}
+:deep(.craft-detail-sidebar .p-sidebar-content) {
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
+}
 </style>

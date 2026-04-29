@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="sched-view">
         <div class="sched-view-header">
             <div>
@@ -29,29 +29,43 @@
         </div>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="sourceId" size="small"
-            :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
-            <Column field="sourceType" header="Source" style="width:130px" sortable>
+            class="ent-grid" :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
+            <Column field="sourceType" header="Source" style="width:110px" sortable>
                 <template #body="{ data }">
                     <Tag :value="data.sourceType" :severity="sourceTagSeverity(data.sourceType)" />
                 </template>
             </Column>
-            <Column field="name" header="Job Name" sortable />
-            <Column field="client" header="Client" sortable />
-            <Column field="site" header="Site" />
-            <Column field="status" header="Status" style="width:100px" sortable>
+            <Column field="name" header="Job Name" sortable>
                 <template #body="{ data }">
-                    <span :class="statusClass(data.status)">{{ data.status }}</span>
+                    <span class="ent-truncate">{{ data.name }}</span>
                 </template>
             </Column>
-            <Column header="Start" style="width:110px" sortable sortField="startDate">
+            <Column field="client" header="Client" style="width:160px" sortable>
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.client }}</span>
+                </template>
+            </Column>
+            <Column field="site" header="Site" style="width:130px">
+                <template #body="{ data }">
+                    <span class="ent-truncate">{{ data.site }}</span>
+                </template>
+            </Column>
+            <Column field="status" header="Status" style="width:90px" sortable>
+                <template #body="{ data }">
+                    <Tag :value="data.status" :severity="statusSeverity(data.status)" />
+                </template>
+            </Column>
+            <Column header="Start" style="width:100px" sortable sortField="startDate">
                 <template #body="{ data }">{{ fmtDate(data.startDate) }}</template>
             </Column>
-            <Column header="End" style="width:110px" sortable sortField="endDate">
+            <Column header="End" style="width:100px" sortable sortField="endDate">
                 <template #body="{ data }">{{ fmtDate(data.endDate) }}</template>
             </Column>
-            <Column header="" style="width:130px">
+            <Column header="" style="width:110px">
                 <template #body="{ data }">
-                    <Button label="Assign" size="small" outlined @click="openAssign(data)" />
+                    <div class="row-actions">
+                        <Button label="Assign" size="small" outlined @click="openAssign(data)" />
+                    </div>
                 </template>
             </Column>
             <template #empty>
@@ -157,16 +171,16 @@ function sourceTagSeverity(type: string) {
     return 'info';
 }
 
-function statusClass(s: string) {
+function statusSeverity(s: string) {
     const l = s?.toLowerCase();
-    if (l === 'awarded') return 'status-awarded';
-    if (l === 'pending' || l === 'approved') return 'status-pending';
-    return 'status-other';
+    if (l === 'awarded') return 'success';
+    if (l === 'pending' || l === 'approved') return 'warn';
+    return 'secondary';
 }
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 const assignVisible = ref(false);
@@ -199,7 +213,7 @@ async function saveAssign() {
             shift: assignForm.value.shift,
             status: 'Planned',
         };
-        const { data } = await apiStore.api.value.post('/api/v1/scheduling/assignments', payload);
+        const { data } = await apiStore.api.post('/api/v1/scheduling/assignments', payload);
         assignVisible.value = false;
         toast.add({ severity: 'success', summary: 'Assignment Created', life: 2500 });
         await load();
@@ -219,8 +233,8 @@ async function load() {
     error.value = false;
     try {
         const [jobsResp, resResp] = await Promise.all([
-            apiStore.api.value.get('/api/v1/scheduling/jobs'),
-            apiStore.api.value.get('/api/v1/scheduling/resources'),
+            apiStore.api.get('/api/v1/scheduling/jobs'),
+            apiStore.api.get('/api/v1/scheduling/resources'),
         ]);
         jobs.value = jobsResp.data;
         resources.value = resResp.data;
@@ -241,9 +255,6 @@ onMounted(load);
 .sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
 .sched-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 .sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
-.status-awarded { color: var(--green-600, #16a34a); font-weight: 600; }
-.status-pending { color: var(--orange-500, #f97316); font-weight: 600; }
-.status-other { color: var(--text-color-secondary); }
 .assign-form { display: flex; flex-direction: column; gap: 1rem; }
 .assign-field { display: flex; flex-direction: column; gap: 0.35rem; }
 .assign-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }

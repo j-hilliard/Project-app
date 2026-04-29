@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="planning-view">
         <div class="planning-view-header">
             <div class="planning-view-header-left">
@@ -12,7 +12,7 @@
         </div>
 
         <Message v-if="error" severity="error" :closable="false">
-            Could not load plans. Make sure the API is running.
+            {{ errorMessage }}
         </Message>
 
         <!-- Filters -->
@@ -119,6 +119,7 @@ const confirm = useConfirm();
 
 const loading = ref(false);
 const error = ref(false);
+const errorMessage = ref('Could not load plans. Make sure the API is running.');
 const saving = ref(false);
 const plans = ref<any[]>([]);
 const statusFilter = ref<string | null>(null);
@@ -152,7 +153,7 @@ function statusSeverity(s: string) {
 
 function fmtDate(d: string | null | undefined) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 const formVisible = ref(false);
@@ -170,7 +171,7 @@ async function savePlan() {
     }
     saving.value = true;
     try {
-        const { data } = await apiStore.api.value.post('/api/v1/planning/step-out-plans', { ...form.value, status: 'Draft' });
+        const { data } = await apiStore.api.post('/api/v1/planning/step-out-plans', { ...form.value, status: 'Draft' });
         formVisible.value = false;
         toast.add({ severity: 'success', summary: 'Plan Created', life: 2000 });
         router.push(`/planning/step-out-plans/${data.planId}`);
@@ -189,7 +190,7 @@ function confirmDelete(plan: any) {
         acceptSeverity: 'danger',
         accept: async () => {
             try {
-                await apiStore.api.value.delete(`/api/v1/planning/step-out-plans/${plan.planId}`);
+                await apiStore.api.delete(`/api/v1/planning/step-out-plans/${plan.planId}`);
                 toast.add({ severity: 'success', summary: 'Deleted', life: 2000 });
                 await load();
             } catch {
@@ -203,9 +204,16 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const { data } = await apiStore.api.value.get('/api/v1/planning/step-out-plans');
+        const { data } = await apiStore.api.get('/api/v1/planning/step-out-plans');
         plans.value = data;
-    } catch {
+    } catch (e: any) {
+        if (!e.response) {
+            errorMessage.value = 'Could not reach the API. It may still be starting — try refreshing in a moment.';
+        } else if (e.response.status === 401) {
+            errorMessage.value = 'Session expired. Redirecting to login...';
+        } else {
+            errorMessage.value = `API error (${e.response.status}). Could not load plans.`;
+        }
         error.value = true;
     } finally {
         loading.value = false;

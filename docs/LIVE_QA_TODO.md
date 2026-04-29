@@ -8,6 +8,7 @@ This is the living demo-readiness scoreboard. Update it whenever testing finds a
 - **Closure authority:** Only Joseph or Codex may check off live TODO items as complete. Claude may add implementation notes and may claim "ready for verification," but must not close an item unless the note explicitly says `Joseph waived this requirement` or `Joseph accepted this as-is`, with date/rationale/evidence.
 - **Claude self-certification rule:** If Claude checks an item without Joseph/Codex verification, Codex must uncheck it during the next audit and add `Reopened reason: checked by implementer without independent verification`.
 - **Implementation vs verification split:** Claude is treated as the implementer. Codex is the QA/orchestration owner responsible for audit sweeps, screenshots, evidence packets, regression checklist updates, and final TODO state.
+- **Project-app QA enforcement charter:** For every Claude cleanup batch, Regression Guard must read this file and `docs/QA_REGRESSION_CHECKLIST.md` first, inspect the changed code, run architecture checks, run Project-app runtime/route/interaction checks, verify screenshot visual consistency, and log findings in this file plus `docs/TEST_RUN_LOG.md`. No cleanup item may close until Joseph approves it and Codex retests it. Codex/testers do not make product code changes under this charter.
 - An open item means `investigate/decide`, not `fix immediately`.
 - If Joseph accepts a behavior as-is, move the item to `Accepted As-Is` with the decision, rationale, date, and any evidence. Do not keep re-reporting accepted behavior as a defect unless new evidence changes the risk.
 - Do not mark an item complete until it has evidence: file paths, screenshots, build/test output, or explicit manual verification notes.
@@ -1020,6 +1021,23 @@ These items are QA enforcement gates for Joseph's 2026-04-29 PM/Scheduling found
 - **Screenshots/evidence:** Joseph review note, 2026-04-29.
 - **Status:** New / Waiting for Claude.
 - **Regression checklist:** `QA-ARCH-008`, `QA-ARCH-014`, `QA-ARCH-015`.
+- **Reopened reason:** N/A.
+
+### ARCH-015: Codex QA Enforcement Charter Must Be Applied To Every Claude Batch
+
+- [ ] Enforce Joseph's Project-app QA charter on every cleanup/refactor batch.
+- **Area/module:** QA process / architecture enforcement / PM + Scheduling runtime.
+- **Severity:** High.
+- **Type:** QA Process / Architecture / Regression Guardrail.
+- **Route/screen:** All PM and Scheduling routes; changed backend/frontend files in the active cleanup/refactor branch.
+- **Repro steps:** For each Claude batch, read this file and `docs/QA_REGRESSION_CHECKLIST.md`, inspect changed code, run architecture checks, run runtime/route/interaction checks, capture screenshots, and log findings.
+- **Expected behavior:** Codex/testers treat architecture drift as blocking defects. Findings include severity, impacted files/screens, why it matters, recommended fix, and evidence. PM and Scheduling remain one dense visual system; Scheduling remains personnel-only; Planning owns Gantt/timeline; field-facing screens do not expose internal dollars by default; Estimate -> WorkOrder -> FCO -> Actuals traceability remains intact.
+- **Actual behavior:** Joseph added this charter on 2026-04-29 and required it to be part of Codex's ongoing QA rules.
+- **Why it matters:** Without this enforcement charter, Claude can fix visible screens while architecture, UX state consistency, and traceability quietly regress.
+- **Suggested fix direction:** Keep the charter in the regression checklist, run it after every Claude batch, and never close cleanup work without Joseph approval plus Codex retest.
+- **Screenshots/evidence:** Joseph QA charter note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-016`, `QA-UI-017`, `QA-PLAN-016`, `QA-SCHED-015`, `QA-PLAN-017`, `QA-LIFE-008`.
 - **Reopened reason:** N/A.
 
 ## Verification Sweeps

@@ -345,3 +345,29 @@
 **Regressions added for enforcement:** `ARCH-009` through `ARCH-014` in `LIVE_QA_TODO.md`; `QA-ARCH-012` through `QA-ARCH-015`, `QA-UI-015`, and `QA-UI-016` in `QA_REGRESSION_CHECKLIST.md`.
 
 **Next step:** Codex must fail cleanup closure until Batches 6-10 are evidenced: thin `DevController`, verified bootstrap, real shared UI system used by PM/Scheduling, feature-split services, hard-fail architecture checks, passing builds, route smoke, and Project-app QA evidence.
+
+---
+
+## 2026-04-29 - Codex QA Guardrail Update: Project-app QA Enforcement Charter
+
+**What changed:** Codex added Joseph's QA/regression/architecture enforcement charter to the shared QA docs.
+
+**Why:** Joseph clarified that Codex is the QA / regression / architecture enforcement authority for Project-app and must treat architecture drift as a blocking defect with evidence, not a cleanup-later note.
+
+**Files touched by Codex QA:**
+- `docs/LIVE_QA_TODO.md`
+- `docs/QA_REGRESSION_CHECKLIST.md`
+- `docs/TEST_RUN_LOG.md`
+- `docs/IMPLEMENTATION_WORKLOG.md`
+
+**Product code changed:** No.
+
+**Commands / tools run:**
+- Read current branch status and QA docs.
+- Updated QA docs only.
+
+**Test results:** Docs-only QA operating update. No app build or browser run was required for this doc change.
+
+**Regressions added for enforcement:** `ARCH-015` in `LIVE_QA_TODO.md`; `QA-ARCH-016`, `QA-UI-017`, `QA-PLAN-016`, `QA-SCHED-015`, `QA-PLAN-017`, and `QA-LIFE-008` in `QA_REGRESSION_CHECKLIST.md`.
+
+**Next step:** Codex must apply the charter to every Claude batch: inspect code changes, run architecture checks, run runtime/route/interaction checks, capture screenshots, and log every architecture/UX/business-rule drift finding with severity, impacted files/screens, why it matters, recommended fix, and evidence.

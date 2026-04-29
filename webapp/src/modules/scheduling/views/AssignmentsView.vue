@@ -1,25 +1,18 @@
-﻿<template>
-    <div class="sched-view">
-        <div class="sched-view-header">
-            <div>
-                <h1>Assignments</h1>
-                <p>Assign resources to jobs with double-booking and certification conflict detection.</p>
-            </div>
-            <div class="sched-header-actions">
-                <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
-                <Button label="New Assignment" icon="pi pi-plus" @click="openNew" />
-            </div>
-        </div>
+<template>
+    <ModulePageShell>
+        <ModulePageHeader title="Assignments" subtitle="Assign resources to jobs with double-booking and certification conflict detection.">
+            <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
+            <Button label="New Assignment" icon="pi pi-plus" @click="openNew" />
+        </ModulePageHeader>
 
         <Message v-if="error" severity="error" :closable="false">
             Could not load assignments. Make sure the API is running.
         </Message>
 
-        <!-- Filters -->
-        <div class="sched-filters">
+        <ModuleFilterBar>
             <InputText v-model="search" placeholder="Search resource or job..." class="flex-1 min-w-10rem" @input="applyFilters" />
             <Tag :value="`${filtered.length} assignments`" severity="info" />
-        </div>
+        </ModuleFilterBar>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="assignmentId" size="small"
             class="ent-grid" :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
@@ -44,10 +37,10 @@
                 </template>
             </Column>
             <Column header="Start" style="width:100px" sortable sortField="start">
-                <template #body="{ data }">{{ fmtDate(data.start) }}</template>
+                <template #body="{ data }"><AppDateValue :value="data.start" /></template>
             </Column>
             <Column header="End" style="width:100px" sortable sortField="end">
-                <template #body="{ data }">{{ fmtDate(data.end) }}</template>
+                <template #body="{ data }"><AppDateValue :value="data.end" /></template>
             </Column>
             <Column field="status" header="Status" style="width:96px">
                 <template #body="{ data }">
@@ -56,14 +49,14 @@
             </Column>
             <Column header="" style="width:68px">
                 <template #body="{ data }">
-                    <div class="row-actions">
+                    <RowActionGroup>
                         <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
                         <Button icon="pi pi-trash" text severity="danger" size="small" @click="confirmDelete(data)" />
-                    </div>
+                    </RowActionGroup>
                 </template>
             </Column>
             <template #empty>
-                <span class="sched-empty">No assignments found. Create one using the button above or from the Jobs Board.</span>
+                <span class="ent-empty">No assignments found. Create one using the button above or from the Jobs Board.</span>
             </template>
         </DataTable>
 
@@ -124,21 +117,22 @@
         </Dialog>
 
         <ConfirmDialog />
-    </div>
+    </ModulePageShell>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { useSchedulingService } from '../services/useSchedulingService';
-import { useFormatters } from '@/ui';
+import { useAssignmentService } from '../services/assignmentService';
+import { useResourceService } from '../services/resourceService';
 import { assignmentStatusSeverity as statusSeverity } from '@/ui';
+import { ModulePageShell, ModulePageHeader, ModuleFilterBar, AppDateValue, RowActionGroup } from '@/ui';
 
 const toast = useToast();
 const confirm = useConfirm();
-const { listAssignments, listResources, listJobs, createAssignment, updateAssignment, deleteAssignment } = useSchedulingService();
-const { fmtDate } = useFormatters();
+const { listAssignments, createAssignment, updateAssignment, deleteAssignment, listJobs } = useAssignmentService();
+const { listResources } = useResourceService();
 
 const loading = ref(false);
 const error = ref(false);
@@ -269,13 +263,6 @@ onMounted(load);
 </script>
 
 <style scoped>
-.sched-view { max-width: 1200px; margin: 0 auto; padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
-.sched-view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.sched-view-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
-.sched-header-actions { display: flex; gap: 0.5rem; align-items: center; }
-.sched-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
 .form-grid { display: flex; flex-direction: column; gap: 1rem; }
 .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
 .form-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }
@@ -284,4 +271,5 @@ onMounted(load);
 .conflict-item { display: flex; align-items: flex-start; gap: 0.5rem; }
 .conflict-item i { color: var(--orange-500, #f97316); margin-top: 0.15rem; flex-shrink: 0; }
 .conflict-note { font-size: 0.85rem; color: var(--text-color-secondary); margin: 0; }
+.ent-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
 </style>

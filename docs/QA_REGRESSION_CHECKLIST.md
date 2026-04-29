@@ -13,6 +13,38 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 
 ---
 
+## Project-app QA Enforcement Charter - Added 2026-04-29
+
+Codex/testers are QA / regression / architecture enforcement for `Project-app`. Codex does not change product code. Codex tests, inspects, documents, and enforces.
+
+Every cleanup-batch audit must:
+
+- Read `docs/LIVE_QA_TODO.md` and this checklist first.
+- Inspect changed code after every Claude batch on the active cleanup/refactor branch.
+- Run architecture checks and include full output/exit code in evidence.
+- Run runtime, route, and interaction checks against Project-app only.
+- Capture screenshot-based visual consistency evidence for PM and Scheduling.
+- Log findings in `docs/LIVE_QA_TODO.md` and run history in `docs/TEST_RUN_LOG.md`.
+- Leave checkboxes open until Joseph approval plus Codex retest.
+
+Architecture drift is a blocking defect, not a cleanup-later note. Every finding must include severity, impacted files/screens, why it matters, recommended fix direction, and evidence.
+
+Hard enforcement points:
+
+- No direct API access from PM/Scheduling views.
+- No local duplicate formatters or severity helpers in PM/Scheduling views.
+- No giant monolithic views/controllers regrowing.
+- Shared UI primitives must actually be used.
+- Dense table/list consistency must hold.
+- Hover, focus, selected, disabled, and loading states must be visually consistent.
+- PM and Scheduling must share one visual system.
+- Field-facing screens must not expose internal dollars by default.
+- Scheduling must remain personnel-only.
+- Planning must own Gantt/timeline.
+- Traceability across Estimate -> WorkOrder -> FCO -> Actuals must remain intact.
+
+---
+
 ## Domain Lanes and ID Prefixes
 
 | Domain | Prefix | Who verifies |
@@ -1325,8 +1357,14 @@ These checks are mandatory for the `refactor/pm-scheduling-foundation` cleanup b
 | QA-ARCH-013 | PM/Scheduling service layer is split by feature/domain, not two giant wrappers. | NEW / REQUIRED | Required service split includes projects, work orders, work packages, FCOs, resources, assignments, coverage, and demand where applicable. |
 | QA-ARCH-014 | Warn-mode architecture checks become hard-fail when their cleanup batch is complete. | NEW / REQUIRED | Permanent warn mode is not accepted. |
 | QA-ARCH-015 | Cleanup branch is not accepted until Joseph's updated definition of done is fully evidenced. | NEW / REQUIRED | Batches 1-5 are partial progress only. |
+| QA-ARCH-016 | Every Claude cleanup batch gets architecture inspection before runtime acceptance. | NEW / REQUIRED | Codex/testers must inspect changed code, run architecture checks, and log findings with severity, impacted files/screens, why it matters, recommended fix, and evidence. |
 | QA-UI-015 | Required shared UI primitives exist and are used by PM/Scheduling views. | NEW / REQUIRED | `ModulePageShell`, `ModulePageHeader`, `ModuleFilterBar`, `ModuleStatsStrip`, `AppStatusTag`, `AppDateValue`, `AppCurrencyValue`, `AppEmptyState`, `RowActionGroup`, `DetailCard`, `MetaGrid`. |
 | QA-UI-016 | PM/Scheduling views do not retain route-by-route homemade shell/filter/header/card CSS islands. | NEW / REQUIRED | Views should orchestrate only and use shared UI structure. |
+| QA-UI-017 | Hover, focus, selected, disabled, and loading states are visually consistent across PM and Scheduling. | NEW / REQUIRED | Screenshot/interaction evidence required; inconsistent states are blocking visual-system defects. |
+| QA-PLAN-016 | Planning remains owner of Gantt/timeline behavior. | NEW / REQUIRED | Scheduling must not own Gantt, PM timeline, phases, milestones, baselines, or task dependency logic. |
+| QA-SCHED-015 | Scheduling remains personnel-only. | NEW / REQUIRED | Scheduling can consume demand and assign people; it must not own PM timeline/WBS/Gantt/commercial pricing logic. |
+| QA-PLAN-017 | Field-facing WorkPackage/field screens do not expose internal dollars by default. | NEW / REQUIRED | WorkOrder can show internal financial control; WorkPackage/field surfaces must remain field-safe unless Joseph explicitly approves. |
+| QA-LIFE-008 | Estimate -> WorkOrder -> FCO -> Actuals traceability remains intact. | NEW / REQUIRED | Verify no orphan executable/change/actual records and no broken cross-module chain after cleanup. |
 
 ### Architecture Guardrail Retest Minimum
 

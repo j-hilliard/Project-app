@@ -920,6 +920,108 @@ These items are QA enforcement gates for Joseph's 2026-04-29 PM/Scheduling found
 - **Regression checklist:** `QA-ARCH-011`.
 - **Reopened reason:** N/A.
 
+### ARCH-009: Batch 1-5 Cleanup Must Not Be Accepted As Complete
+
+- [ ] Keep `refactor/pm-scheduling-foundation` open until Joseph's updated definition of done is satisfied.
+- **Area/module:** Cleanup branch acceptance / QA process.
+- **Severity:** High.
+- **Type:** Architecture / QA Process.
+- **Route/screen:** All PM/Scheduling cleanup work.
+- **Repro steps:** Review branch summary and implementation worklog after Claude reports Batches 1-5 complete.
+- **Expected behavior:** Branch is described as partial foundation progress only. Cleanup remains open until DevController, bootstrap, shared UI system, PM/Scheduling view refactor, service split, hard-fail checks, build, route smoke, and QA checks all pass.
+- **Actual behavior:** Joseph reviewed the pushed branch and explicitly rejected calling Batches 1-5 complete.
+- **Why it matters:** Calling a partial cleanup complete would let new feature work stack onto weak structure.
+- **Suggested fix direction:** Track remaining cleanup as Batches 6-10 and require evidence per batch before any closure.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-011`, `QA-ARCH-015`.
+- **Reopened reason:** N/A.
+
+### ARCH-010: DevController And Startup Bootstrap Cleanup Remain Incomplete
+
+- [ ] Extract dev seed/reset orchestration and verify startup/bootstrap behavior.
+- **Area/module:** Backend seed/bootstrap architecture.
+- **Severity:** High.
+- **Type:** Architecture / Data / Test Safety.
+- **Route/screen:** `Api/Controllers/DevController.cs`, `Api/Program.cs`, `Data/Bootstrap/DatabaseBootstrapper.cs`, seed/orchestrator services.
+- **Repro steps:** Inspect `DevController`, `Program.cs`, and `DatabaseBootstrapper` after Batch 6.
+- **Expected behavior:** `DevController` is a thin endpoint layer; seed/reset orchestration lives in services/orchestrators; startup/bootstrap is explicit, environment-safe, and verified in `TEST_RUN_LOG.md`.
+- **Actual behavior:** Joseph reviewed the pushed branch and found `DevController` still a huge monolith and startup/bootstrap cleanup unfinished.
+- **Why it matters:** Seed/reset/bootstrap mistakes can wipe or mis-seed data and make environment startup unpredictable.
+- **Suggested fix direction:** Create seeding/orchestration services, reduce controller line count drastically, document bootstrap behavior, and make architecture checks hard-fail after extraction.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-010`, `QA-ARCH-012`, `QA-BOOT-001`, `QA-BOOT-002`.
+- **Reopened reason:** N/A.
+
+### ARCH-011: Real Shared UI Component System Is Not Built Yet
+
+- [ ] Build actual `webapp/src/ui/` tokens, styles, components, and composables and require them in PM/Scheduling.
+- **Area/module:** Frontend shared UI system.
+- **Severity:** High.
+- **Type:** Architecture / Visual / UX.
+- **Route/screen:** All Planning and Scheduling views.
+- **Repro steps:** Inspect `webapp/src/ui/` and PM/Scheduling views after Batch 7.
+- **Expected behavior:** Required shared primitives exist and are used: `ModulePageShell`, `ModulePageHeader`, `ModuleFilterBar`, `ModuleStatsStrip`, `AppStatusTag`, `AppDateValue`, `AppCurrencyValue`, `AppEmptyState`, `RowActionGroup`, `DetailCard`, and `MetaGrid`.
+- **Actual behavior:** Joseph reviewed the pushed branch and found shared formatting/status helpers only; that is not a full shared UI system.
+- **Why it matters:** Without real shared components, PM and Scheduling will keep drifting into route-by-route homemade shells.
+- **Suggested fix direction:** Create the UI folder structure and primitives, move density/layout rules into shared files, and document mandatory usage.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29; prior density failures in `docs/QA_EVIDENCE_20260429_PM_SCHED_FULL.md`.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-009`, `QA-UI-013`, `QA-UI-014`, `QA-UI-015`.
+- **Reopened reason:** N/A.
+
+### ARCH-012: PM And Scheduling Views Still Need Structural Refactor Onto Shared UI
+
+- [ ] Refactor PM/Scheduling views so they orchestrate only and use shared UI primitives.
+- **Area/module:** Planning/Scheduling frontend.
+- **Severity:** High.
+- **Type:** Architecture / UI System.
+- **Route/screen:** PM views and Scheduling views listed in Joseph's cleanup directive.
+- **Repro steps:** Inspect PM/Scheduling views after Batches 8 and 9 for local page shell, filter/header/card CSS, large local dialog/layout sections, and bespoke scaffolding.
+- **Expected behavior:** Views are smaller orchestration layers using shared UI components, shared composables, and feature services.
+- **Actual behavior:** Joseph reviewed the pushed branch and found PM/Scheduling views still carry too much local page shell/layout/scoped CSS structure.
+- **Why it matters:** Moving API calls out is not enough if the same pile remains inside views as bespoke UI scaffolding.
+- **Suggested fix direction:** Replace local shell/header/filter/detail patterns with shared primitives and split dialogs/forms/details into focused components.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-005`, `QA-ARCH-006`, `QA-ARCH-007`, `QA-ARCH-009`, `QA-UI-014`, `QA-UI-016`.
+- **Reopened reason:** N/A.
+
+### ARCH-013: PM/Scheduling Service Layer Is Still Too Coarse
+
+- [ ] Split giant module service wrappers into feature/domain services.
+- **Area/module:** Planning/Scheduling frontend services.
+- **Severity:** Medium.
+- **Type:** Architecture / Maintainability.
+- **Route/screen:** `webapp/src/modules/planning/services/**`, `webapp/src/modules/scheduling/services/**`.
+- **Repro steps:** Inspect module service layer after Batches 8 and 9.
+- **Expected behavior:** Services are split by feature/domain, for example `projectService.ts`, `workOrderService.ts`, `workPackageService.ts`, `fcoService.ts`, `resourceService.ts`, `assignmentService.ts`, `coverageService.ts`, and `demandService.ts`.
+- **Actual behavior:** Joseph reviewed the pushed branch and found `usePlanningService` and `useSchedulingService` still too coarse.
+- **Why it matters:** Two giant service wrappers move the pile out of views but do not create clean, composable ownership.
+- **Suggested fix direction:** Split services by bounded feature while keeping views free of direct API store access.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-013`.
+- **Reopened reason:** N/A.
+
+### ARCH-014: Architecture Checks Must Stop Hiding Finished Rules In Warn Mode
+
+- [ ] Convert frontend/architecture warnings to hard failures when each cleanup batch is complete.
+- **Area/module:** Architecture check scripts / QA enforcement.
+- **Severity:** High.
+- **Type:** Test Infrastructure / Architecture.
+- **Route/screen:** `tools/architecture-checks/**`, QA docs.
+- **Repro steps:** Run architecture checks after Batches 8-10 and inspect whether PM/Scheduling violations still pass as warnings.
+- **Expected behavior:** Temporary warn mode is allowed only while the targeted cleanup batch is in progress. Once the batch claims completion, direct API calls, duplicate helpers, UI-system bypass, raw EF request bodies, AppDbContext inline config, DevController monolith, and missing architecture script execution are hard-fail defects.
+- **Actual behavior:** Joseph explicitly rejected permanent warn mode hiding future slippage.
+- **Why it matters:** A guardrail that only warns forever is documentation, not enforcement.
+- **Suggested fix direction:** Add strict mode or default hard-fail mode after each batch lands, and require `TEST_RUN_LOG.md` evidence for architecture-check output.
+- **Screenshots/evidence:** Joseph review note, 2026-04-29.
+- **Status:** New / Waiting for Claude.
+- **Regression checklist:** `QA-ARCH-008`, `QA-ARCH-014`, `QA-ARCH-015`.
+- **Reopened reason:** N/A.
+
 ## Verification Sweeps
 
 ### 2026-04-29 Codex Sweep: PM + Scheduling Full Audit

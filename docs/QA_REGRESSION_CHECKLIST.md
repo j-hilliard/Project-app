@@ -40,8 +40,8 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 
 > Run `bash tools/architecture-checks/run-all-checks.sh` from the repo root.
 > Include the full output and exit code in every audit evidence packet.
-> Backend checks hard-fail. Frontend checks are warn-mode until Batch 3-4 lands.
-> Use `--strict-frontend` flag once all PM/Scheduling views are refactored.
+> Backend checks hard-fail. Frontend checks may be warn-mode only while the targeted cleanup batch is actively in progress.
+> Use strict frontend mode once Batches 8-9 land. Permanent warn mode is a failure.
 
 ### QA-ARCH-001: AppDbContext must not contain inline entity configuration
 - **Rule:** ARCH-BE-002 + ARCH-BE-007 + ARCH-BE-008
@@ -85,6 +85,33 @@ Portal / Planning / Scheduling implementation must also be checked against `docs
 ### QA-ARCH-008: run-all-checks.sh must exit 0 on every audit
 - **Verification:** Run `bash tools/architecture-checks/run-all-checks.sh`; confirm final line is `OVERALL RESULT: PASSED`
 - **This is the single gate** — if it fails, all other ARCH items are suspect
+
+---
+
+### 2026-04-29 Update: no permanent warn mode
+- **Joseph decision:** Batches 1-5 are partial progress, not final cleanup completion.
+- **Rule:** Any warn-mode architecture check is temporary only while its targeted cleanup batch is actively in progress.
+- **Batch mapping:** frontend direct API/helper warnings must become hard-fail after PM/Scheduling view refactor Batches 8-9; DevController ownership must become hard-fail after Batch 6; final cleanup cannot pass while known violations are hidden as warnings.
+
+### QA-ARCH-012: DevController must stay thin after Batch 6
+- **Rule:** Dev/seed/bootstrap orchestration belongs in services/orchestrators, not controller monoliths
+- **Verification after Batch 6:** `DevController` exposes narrow endpoints only; architecture check hard-fails oversized or seed-heavy controller drift
+- **Regression trigger:** seed/reset orchestration is added back to `Api/Controllers/DevController.cs`
+
+### QA-ARCH-013: PM/Scheduling service layer must be feature/domain split
+- **Rule:** giant `usePlanningService` / `useSchedulingService` wrappers are not enough
+- **Verification after Batches 8-9:** feature services exist for project, work order, work package, FCO, resources, assignments, coverage, and demand where applicable
+- **Regression trigger:** views depend on one large module service wrapper for unrelated feature domains
+
+### QA-ARCH-014: Warn-mode checks must become hard-fail when their batch is complete
+- **Rule:** guardrails are enforcement, not permanent suggestions
+- **Verification:** after Batches 8-10, architecture checks fail the build/audit for direct API view access, duplicate helpers, shared UI bypass, raw EF request bodies, inline DbContext config, and DevController monolith drift
+- **Regression trigger:** cleanup branch passes while known forbidden patterns remain as warnings
+
+### QA-ARCH-015: Cleanup branch cannot be accepted until updated definition of done is met
+- **Rule:** Batches 1-5 are partial progress, not final cleanup completion
+- **Verification:** `DevController` thin, bootstrap verified, shared UI system exists and is used, feature services are split, architecture scripts/docs are updated, builds/tests/route smoke/QA checks pass, and branch is pushed for review
+- **Regression trigger:** implementation worklog or final response claims cleanup complete before all definition-of-done items are evidenced
 
 ---
 
@@ -1294,6 +1321,12 @@ These checks are mandatory for the `refactor/pm-scheduling-foundation` cleanup b
 | QA-BE-001 | Controllers remain thin transport layers after cleanup. | NEW / REQUIRED | Business logic belongs in services/handlers; WorkOrder financial rollups must be service-owned. |
 | QA-BE-002 | `WorkOrderFinancialService` or equivalent owns work-order financial calculations. | NEW / REQUIRED | No inline financial rollup logic in `WorkOrderController`. |
 | QA-BE-003 | Planning/Scheduling services preserve lifecycle gates and personnel-only scheduling boundaries. | NEW / REQUIRED | Scheduling remains personnel-only; Gantt/timeline remain Planning-only; Forecast demand remains not assignable. |
+| QA-ARCH-012 | DevController is thin and seed/reset orchestration is service-owned after Batch 6. | NEW / REQUIRED | Joseph rejected the branch as complete while `DevController` remains a monolith. This must become hard-fail after extraction. |
+| QA-ARCH-013 | PM/Scheduling service layer is split by feature/domain, not two giant wrappers. | NEW / REQUIRED | Required service split includes projects, work orders, work packages, FCOs, resources, assignments, coverage, and demand where applicable. |
+| QA-ARCH-014 | Warn-mode architecture checks become hard-fail when their cleanup batch is complete. | NEW / REQUIRED | Permanent warn mode is not accepted. |
+| QA-ARCH-015 | Cleanup branch is not accepted until Joseph's updated definition of done is fully evidenced. | NEW / REQUIRED | Batches 1-5 are partial progress only. |
+| QA-UI-015 | Required shared UI primitives exist and are used by PM/Scheduling views. | NEW / REQUIRED | `ModulePageShell`, `ModulePageHeader`, `ModuleFilterBar`, `ModuleStatsStrip`, `AppStatusTag`, `AppDateValue`, `AppCurrencyValue`, `AppEmptyState`, `RowActionGroup`, `DetailCard`, `MetaGrid`. |
+| QA-UI-016 | PM/Scheduling views do not retain route-by-route homemade shell/filter/header/card CSS islands. | NEW / REQUIRED | Views should orchestrate only and use shared UI structure. |
 
 ### Architecture Guardrail Retest Minimum
 

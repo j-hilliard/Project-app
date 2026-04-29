@@ -319,3 +319,29 @@
 **Regressions added for enforcement:** `ARCH-001` through `ARCH-008` in `LIVE_QA_TODO.md`; linked existing `QA-ARCH-001` through `QA-ARCH-008` and added unique `QA-ARCH-009` through `QA-ARCH-011`, `QA-UI-013`, `QA-UI-014`, and backend architecture checks in `QA_REGRESSION_CHECKLIST.md`.
 
 **Next step:** When Claude creates `refactor/pm-scheduling-foundation`, Codex must audit each batch against the new architecture lane and fail the branch for forbidden PM/Scheduling view API calls, duplicate helpers, raw EF request bodies, inline DbContext config, UI-system bypass, or missing architecture-check scripts.
+
+---
+
+## 2026-04-29 - Codex QA Guardrail Update: Cleanup Continuation Batches 6-10
+
+**What changed:** Codex recorded Joseph's review that the pushed `refactor/pm-scheduling-foundation` branch is improved but not accepted as Batches 1-5 complete.
+
+**Why:** Joseph identified unfinished foundation work: `DevController` monolith cleanup, startup/bootstrap verification, a real shared UI component system, PM/Scheduling view refactor onto shared primitives, feature/domain service split, and stronger tester/Codex enforcement.
+
+**Files touched by Codex QA:**
+- `docs/LIVE_QA_TODO.md`
+- `docs/QA_REGRESSION_CHECKLIST.md`
+- `docs/TEST_RUN_LOG.md`
+- `docs/IMPLEMENTATION_WORKLOG.md`
+
+**Product code changed:** No.
+
+**Commands / tools run:**
+- Read current branch status and QA docs.
+- Updated QA docs only.
+
+**Test results:** Docs-only QA operating update. No app build or browser run was required for this doc change.
+
+**Regressions added for enforcement:** `ARCH-009` through `ARCH-014` in `LIVE_QA_TODO.md`; `QA-ARCH-012` through `QA-ARCH-015`, `QA-UI-015`, and `QA-UI-016` in `QA_REGRESSION_CHECKLIST.md`.
+
+**Next step:** Codex must fail cleanup closure until Batches 6-10 are evidenced: thin `DevController`, verified bootstrap, real shared UI system used by PM/Scheduling, feature-split services, hard-fail architecture checks, passing builds, route smoke, and Project-app QA evidence.

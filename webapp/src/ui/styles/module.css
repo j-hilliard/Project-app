@@ -1,0 +1,179 @@
+/* ── Page shell ─────────────────────────────────────────────────────────────── */
+.moduleView {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────────── */
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.pageHeader h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+.pageHeader p {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.88rem;
+}
+.headerActions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── Filter bar ─────────────────────────────────────────────────────────────── */
+.filterBar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── Stats strip ────────────────────────────────────────────────────────────── */
+.statsStrip {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.statCard {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 140px;
+    flex: 1;
+}
+.statLabel {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.statValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1;
+}
+.statSub {
+    font-size: 0.78rem;
+    color: var(--text-color-secondary);
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────────── */
+.emptyState {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 3rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+.emptyState i {
+    font-size: 2rem;
+    color: var(--text-color-secondary);
+}
+.emptyState p {
+    margin: 0;
+    color: var(--text-color-secondary);
+}
+.emptyCell {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+}
+
+/* ── Detail card ────────────────────────────────────────────────────────────── */
+.detailCard {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.detailCardTitle {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 0.25rem;
+}
+
+/* ── Meta grid ──────────────────────────────────────────────────────────────── */
+.metaGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem 1.5rem;
+}
+.metaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.metaLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.metaValue {
+    font-size: 0.88rem;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* ── Row actions ────────────────────────────────────────────────────────────── */
+.rowActions {
+    display: flex;
+    gap: 0.1rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* ── Form layout ────────────────────────────────────────────────────────────── */
+.formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.formField label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+}
+.formFieldRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.formFieldInline {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}

@@ -1,32 +1,19 @@
-﻿<template>
-    <div class="sched-view">
-        <div class="sched-view-header">
-            <div>
-                <h1>Jobs Board</h1>
-                <p>All active demand — awarded/pending estimates, approved staffing plans, and work packages ready for scheduling.</p>
-            </div>
+<template>
+    <ModulePageShell>
+        <ModulePageHeader title="Jobs Board" subtitle="All active demand — awarded/pending estimates, approved staffing plans, and work packages ready for scheduling.">
             <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
-        </div>
+        </ModulePageHeader>
 
         <Message v-if="error" severity="error" :closable="false">
             Could not load demand. Make sure the API is running.
         </Message>
 
-        <!-- Filters -->
-        <div class="sched-filters">
-            <Dropdown
-                v-model="sourceFilter"
-                :options="sourceOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="All Sources"
-                class="w-12rem"
-                showClear
-                @change="applyFilters"
-            />
+        <ModuleFilterBar>
+            <Dropdown v-model="sourceFilter" :options="sourceOptions" optionLabel="label" optionValue="value"
+                placeholder="All Sources" class="w-12rem" showClear @change="applyFilters" />
             <InputText v-model="search" placeholder="Search jobs..." class="flex-1 min-w-10rem" @input="applyFilters" />
             <Tag :value="`${filtered.length} jobs`" severity="info" />
-        </div>
+        </ModuleFilterBar>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="sourceId" size="small"
             class="ent-grid" :rows="25" paginator :rowsPerPageOptions="[10, 25, 50]">
@@ -56,53 +43,52 @@
                 </template>
             </Column>
             <Column header="Start" style="width:100px" sortable sortField="startDate">
-                <template #body="{ data }">{{ fmtDate(data.startDate) }}</template>
+                <template #body="{ data }"><AppDateValue :value="data.startDate" /></template>
             </Column>
             <Column header="End" style="width:100px" sortable sortField="endDate">
-                <template #body="{ data }">{{ fmtDate(data.endDate) }}</template>
+                <template #body="{ data }"><AppDateValue :value="data.endDate" /></template>
             </Column>
             <Column header="" style="width:110px">
                 <template #body="{ data }">
-                    <div class="row-actions">
+                    <RowActionGroup>
                         <Button label="Assign" size="small" outlined @click="openAssign(data)" />
-                    </div>
+                    </RowActionGroup>
                 </template>
             </Column>
             <template #empty>
-                <span class="sched-empty">No demand found. Ensure estimates are Awarded/Pending or call the seed endpoint.</span>
+                <span class="ent-empty">No demand found. Ensure estimates are Awarded/Pending or call the seed endpoint.</span>
             </template>
         </DataTable>
 
         <!-- Assign Resource Dialog -->
         <Dialog v-model:visible="assignVisible" header="New Assignment" modal :style="{ width: '480px' }">
-            <div class="assign-form">
-                <div class="assign-field">
+            <div class="form-grid">
+                <div class="form-field">
                     <label>Job</label>
                     <InputText :value="assignJob?.name" disabled />
                 </div>
-                <div class="assign-field">
+                <div class="form-field">
                     <label>Resource</label>
                     <Dropdown v-model="assignForm.resourceId" :options="resources" optionLabel="name" optionValue="resourceId"
                         placeholder="Select resource" class="w-full" filter />
                 </div>
-                <div class="assign-field">
+                <div class="form-field">
                     <label>Craft</label>
                     <InputText v-model="assignForm.craftCode" placeholder="e.g. PP" />
                 </div>
-                <div class="assign-field-row">
-                    <div class="assign-field">
+                <div class="form-field-row">
+                    <div class="form-field">
                         <label>Start</label>
                         <Calendar v-model="assignForm.start" showIcon dateFormat="yy-mm-dd" />
                     </div>
-                    <div class="assign-field">
+                    <div class="form-field">
                         <label>End</label>
                         <Calendar v-model="assignForm.end" showIcon dateFormat="yy-mm-dd" />
                     </div>
                 </div>
-                <div class="assign-field">
+                <div class="form-field">
                     <label>Shift</label>
-                    <Dropdown v-model="assignForm.shift" :options="['Day', 'Night', 'Rotation']"
-                        placeholder="Day" class="w-full" />
+                    <Dropdown v-model="assignForm.shift" :options="['Day', 'Night', 'Rotation']" placeholder="Day" class="w-full" />
                 </div>
             </div>
             <template #footer>
@@ -111,7 +97,6 @@
             </template>
         </Dialog>
 
-        <!-- Conflict Warning Dialog -->
         <Dialog v-model:visible="conflictVisible" header="Scheduling Conflicts Detected" modal :style="{ width: '440px' }">
             <div class="conflict-list">
                 <div v-for="c in conflicts" :key="c.type" class="conflict-item">
@@ -124,19 +109,20 @@
                 <Button label="OK" @click="conflictVisible = false" />
             </template>
         </Dialog>
-    </div>
+    </ModulePageShell>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useSchedulingService } from '../services/useSchedulingService';
-import { useFormatters } from '@/ui';
+import { useAssignmentService } from '../services/assignmentService';
+import { useResourceService } from '../services/resourceService';
 import { sourceTagSeverity, demandStatusSeverity as statusSeverity } from '@/ui';
+import { ModulePageShell, ModulePageHeader, ModuleFilterBar, AppDateValue, RowActionGroup } from '@/ui';
 
 const toast = useToast();
-const { listJobs, listResources, createAssignment } = useSchedulingService();
-const { fmtDate } = useFormatters();
+const { listJobs, createAssignment } = useAssignmentService();
+const { listResources } = useResourceService();
 
 const loading = ref(false);
 const error = ref(false);
@@ -166,7 +152,7 @@ const filtered = computed(() => {
     return list;
 });
 
-function applyFilters() { /* computed handles it */ }
+function applyFilters() { /* computed */ }
 
 const assignVisible = ref(false);
 const conflictVisible = ref(false);
@@ -231,16 +217,11 @@ onMounted(load);
 </script>
 
 <style scoped>
-.sched-view { max-width: 1200px; margin: 0 auto; padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
-.sched-view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.sched-view-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
-.sched-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
-.assign-form { display: flex; flex-direction: column; gap: 1rem; }
-.assign-field { display: flex; flex-direction: column; gap: 0.35rem; }
-.assign-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }
-.assign-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.ent-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
+.form-grid { display: flex; flex-direction: column; gap: 1rem; }
+.form-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }
+.form-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .conflict-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
 .conflict-item { display: flex; align-items: flex-start; gap: 0.5rem; }
 .conflict-item i { color: var(--orange-500, #f97316); margin-top: 0.15rem; flex-shrink: 0; }

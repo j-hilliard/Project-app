@@ -1,28 +1,21 @@
-﻿<template>
-    <div class="sched-view">
-        <div class="sched-view-header">
-            <div>
-                <h1>Resources</h1>
-                <p>Manage craft workers, certifications, and availability.</p>
-            </div>
-            <div class="sched-header-actions">
-                <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
-                <Button label="Add Resource" icon="pi pi-plus" @click="openNew" />
-            </div>
-        </div>
+<template>
+    <ModulePageShell>
+        <ModulePageHeader title="Resources" subtitle="Manage craft workers, certifications, and availability.">
+            <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
+            <Button label="Add Resource" icon="pi pi-plus" @click="openNew" />
+        </ModulePageHeader>
 
         <Message v-if="error" severity="error" :closable="false">
             Could not load resources. Make sure the API is running.
         </Message>
 
-        <!-- Filters -->
-        <div class="sched-filters">
+        <ModuleFilterBar>
             <Dropdown v-model="craftFilter" :options="craftOptions" optionLabel="label" optionValue="value"
                 placeholder="All Crafts" showClear class="w-10rem" @change="applyFilters" />
             <SelectButton v-model="activeFilter" :options="activeOptions" optionLabel="label" optionValue="value" />
             <InputText v-model="search" placeholder="Search resources..." class="flex-1 min-w-10rem" @input="applyFilters" />
             <Tag :value="`${filtered.length} resources`" severity="info" />
-        </div>
+        </ModuleFilterBar>
 
         <DataTable :value="filtered" :loading="loading" stripedRows dataKey="resourceId" size="small"
             class="ent-grid" selectionMode="single" @row-click="openDetail">
@@ -60,14 +53,14 @@
             </Column>
             <Column header="" style="width:68px">
                 <template #body="{ data }">
-                    <div class="row-actions">
+                    <RowActionGroup>
                         <Button icon="pi pi-pencil" text size="small" @click.stop="openEdit(data)" />
                         <Button icon="pi pi-trash" text severity="danger" size="small" @click.stop="confirmDelete(data)" />
-                    </div>
+                    </RowActionGroup>
                 </template>
             </Column>
             <template #empty>
-                <span class="sched-empty">No resources found. Add a resource or call the seed endpoint.</span>
+                <span class="ent-empty">No resources found. Add a resource or call the seed endpoint.</span>
             </template>
         </DataTable>
 
@@ -98,7 +91,7 @@
             </template>
         </Dialog>
 
-        <!-- Detail Side Panel (Dialog) -->
+        <!-- Detail Panel -->
         <Dialog v-model:visible="detailVisible" :header="detailResource?.name ?? 'Resource'" modal :style="{ width: '560px' }">
             <div v-if="detailResource" class="detail-panel">
                 <div class="detail-meta">
@@ -107,16 +100,15 @@
                     <Tag :value="detailResource.isActive ? 'Active' : 'Inactive'"
                         :severity="detailResource.isActive ? 'success' : 'secondary'" />
                 </div>
-
                 <div class="detail-section">
                     <div class="detail-section-header">
                         <h3>Certifications</h3>
                         <Button label="Add Cert" size="small" outlined @click="openAddCert" />
                     </div>
-                    <div v-if="!detailCerts.length" class="sched-empty">No certifications on file.</div>
+                    <div v-if="!detailCerts.length" class="ent-empty">No certifications on file.</div>
                     <div v-for="cert in detailCerts" :key="cert.certId" class="cert-row">
                         <Tag :value="cert.type" severity="secondary" />
-                        <span class="cert-exp">Exp: {{ fmtDate(cert.expirationDate) }}</span>
+                        <span class="cert-exp">Exp: <AppDateValue :value="cert.expirationDate" /></span>
                         <Button icon="pi pi-trash" text severity="danger" size="small" @click="deleteCert(cert)" />
                     </div>
                 </div>
@@ -147,21 +139,20 @@
         </Dialog>
 
         <ConfirmDialog />
-    </div>
+    </ModulePageShell>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { useSchedulingService } from '../services/useSchedulingService';
-import { useFormatters } from '@/ui';
+import { useResourceService } from '../services/resourceService';
+import { ModulePageShell, ModulePageHeader, ModuleFilterBar, AppDateValue, RowActionGroup } from '@/ui';
 
 const toast = useToast();
 const confirm = useConfirm();
 const { listResources, createResource, updateResource, deleteResource,
-        listCertifications, createCertification, deleteCertification } = useSchedulingService();
-const { fmtDate } = useFormatters();
+        listCertifications, createCertification, deleteCertification } = useResourceService();
 
 const loading = ref(false);
 const error = ref(false);
@@ -196,7 +187,6 @@ const filtered = computed(() => {
 
 function applyFilters() { /* computed */ }
 
-// Form
 const formVisible = ref(false);
 const editMode = ref(false);
 const editId = ref<number | null>(null);
@@ -257,7 +247,6 @@ function confirmDelete(r: any) {
     });
 }
 
-// Detail panel
 const detailVisible = ref(false);
 const detailResource = ref<any>(null);
 const detailCerts = ref<any[]>([]);
@@ -273,7 +262,6 @@ async function openDetail(event: any) {
     }
 }
 
-// Cert management
 const certVisible = ref(false);
 const certForm = ref({ type: '', expirationDate: null as Date | null });
 
@@ -286,12 +274,7 @@ async function saveCert() {
     if (!certForm.value.type) return;
     saving.value = true;
     try {
-        const payload = {
-            resourceId: detailResource.value.resourceId,
-            type: certForm.value.type,
-            expirationDate: certForm.value.expirationDate,
-        };
-        await createCertification(payload);
+        await createCertification({ resourceId: detailResource.value.resourceId, type: certForm.value.type, expirationDate: certForm.value.expirationDate as any });
         certVisible.value = false;
         detailCerts.value = await listCertifications(detailResource.value.resourceId);
         toast.add({ severity: 'success', summary: 'Certification Added', life: 2000 });
@@ -328,15 +311,10 @@ onMounted(load);
 </script>
 
 <style scoped>
-.sched-view { max-width: 1100px; margin: 0 auto; padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
-.sched-view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.sched-view-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
-.sched-header-actions { display: flex; gap: 0.5rem; align-items: center; }
-.sched-filters { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
+.ent-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
 .cert-pills { display: flex; flex-wrap: nowrap; gap: 0.25rem; align-items: center; overflow: hidden; }
 .cert-pill { font-size: 0.7rem !important; flex-shrink: 0; }
+.cert-overflow { font-size: 0.72rem; color: var(--text-color-secondary); }
 .form-grid { display: flex; flex-direction: column; gap: 1rem; }
 .form-field { display: flex; flex-direction: column; gap: 0.35rem; }
 .form-field label { font-size: 0.82rem; font-weight: 600; color: var(--text-color-secondary); }

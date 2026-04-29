@@ -1,26 +1,19 @@
-﻿<template>
-    <div class="sched-view">
-        <div class="sched-view-header">
-            <div>
-                <h1>Ending Soon</h1>
-                <p>Resources whose assignments end within the selected window. Plan their next deployment.</p>
-            </div>
-            <div class="sched-header-actions">
-                <SelectButton v-model="days" :options="dayOptions" optionLabel="label" optionValue="value" @change="load" />
-                <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
-            </div>
-        </div>
+<template>
+    <ModulePageShell>
+        <ModulePageHeader title="Ending Soon" subtitle="Resources whose assignments end within the selected window. Plan their next deployment.">
+            <SelectButton v-model="days" :options="dayOptions" optionLabel="label" optionValue="value" @change="load" />
+            <Button label="Refresh" text icon="pi pi-refresh" :loading="loading" @click="load" />
+        </ModulePageHeader>
 
         <Message v-if="error" severity="error" :closable="false">
             Could not load roll-off data. Make sure the API is running.
         </Message>
 
-        <div v-if="!loading && endingSoon.length === 0 && !error" class="sched-empty-state">
-            <i class="pi pi-check-circle" />
-            <p>No resources ending within {{ days }} days. Great coverage!</p>
-        </div>
+        <AppEmptyState v-if="!loading && endingSoon.length === 0 && !error"
+            :message="`No resources ending within ${days} days. Great coverage!`"
+            icon="pi pi-check-circle" />
 
-        <DataTable v-else :value="enriched" :loading="loading" stripedRows dataKey="assignmentId" size="small" class="ent-grid">
+        <DataTable v-else :value="endingSoon" :loading="loading" stripedRows dataKey="assignmentId" size="small" class="ent-grid">
             <Column field="resource.name" header="Resource" sortable>
                 <template #body="{ data }">
                     <span class="ent-truncate">{{ data.resource?.name }}</span>
@@ -37,7 +30,7 @@
                 </template>
             </Column>
             <Column header="End Date" style="width:110px" sortable sortField="end">
-                <template #body="{ data }">{{ fmtDate(data.end) }}</template>
+                <template #body="{ data }"><AppDateValue :value="data.end" /></template>
             </Column>
             <Column header="Days Left" style="width:80px">
                 <template #body="{ data }">
@@ -49,18 +42,18 @@
                     <span v-if="nextMatch(data.resource?.craftCode)" class="next-match ent-truncate">
                         {{ nextMatch(data.resource?.craftCode)?.resourceName }}
                     </span>
-                    <span v-else class="sched-empty">—</span>
+                    <span v-else class="ent-empty">—</span>
                 </template>
             </Column>
             <Column header="" style="width:120px">
                 <template #body="{ data }">
-                    <div class="row-actions">
+                    <RowActionGroup>
                         <Button label="Re-Assign" size="small" outlined @click="openAssign(data)" />
-                    </div>
+                    </RowActionGroup>
                 </template>
             </Column>
             <template #empty>
-                <span class="sched-empty">No assignments ending within {{ days }} days.</span>
+                <span class="ent-empty">No assignments ending within {{ days }} days.</span>
             </template>
         </DataTable>
 
@@ -73,8 +66,7 @@
                 </div>
                 <div class="form-field">
                     <label>Job (Demand Source)</label>
-                    <Dropdown v-model="selectedJob" :options="jobs" optionLabel="name"
-                        placeholder="Select job" class="w-full" filter />
+                    <Dropdown v-model="selectedJob" :options="jobs" optionLabel="name" placeholder="Select job" class="w-full" filter />
                 </div>
                 <div class="form-field">
                     <label>Craft</label>
@@ -100,18 +92,19 @@
                 <Button label="Create Assignment" :loading="saving" @click="saveAssign" />
             </template>
         </Dialog>
-    </div>
+    </ModulePageShell>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useSchedulingService } from '../services/useSchedulingService';
-import { useFormatters } from '@/ui';
+import { useCoverageService } from '../services/coverageService';
+import { useAssignmentService } from '../services/assignmentService';
+import { ModulePageShell, ModulePageHeader, AppDateValue, AppEmptyState, RowActionGroup } from '@/ui';
 
 const toast = useToast();
-const { getEndingSoon, getSuggestedMatches, listJobs, createAssignment } = useSchedulingService();
-const { fmtDate } = useFormatters();
+const { getEndingSoon, getSuggestedMatches } = useCoverageService();
+const { listJobs, createAssignment } = useAssignmentService();
 
 const loading = ref(false);
 const error = ref(false);
@@ -126,8 +119,6 @@ const dayOptions = [
     { label: '14 days', value: 14 },
     { label: '30 days', value: 30 },
 ];
-
-const enriched = computed(() => endingSoon.value);
 
 function nextMatch(craftCode: string | null | undefined) {
     if (!craftCode) return null;
@@ -172,7 +163,7 @@ async function saveAssign() {
     }
     saving.value = true;
     try {
-        const payload = {
+        await createAssignment({
             resourceId: assignResource.value.resource?.resourceId ?? assignResource.value.resourceId,
             jobSourceType: selectedJob.value.sourceType,
             jobSourceId: selectedJob.value.sourceId,
@@ -182,8 +173,7 @@ async function saveAssign() {
             end: assignForm.value.end,
             shift: assignForm.value.shift,
             status: 'Planned',
-        };
-        await createAssignment(payload);
+        });
         assignVisible.value = false;
         toast.add({ severity: 'success', summary: 'Assignment Created', life: 2500 });
         await load();
@@ -198,11 +188,7 @@ async function load() {
     loading.value = true;
     error.value = false;
     try {
-        const [endData, matchData, jobsData] = await Promise.all([
-            getEndingSoon(days.value),
-            getSuggestedMatches(),
-            listJobs(),
-        ]);
+        const [endData, matchData, jobsData] = await Promise.all([getEndingSoon(days.value), getSuggestedMatches(), listJobs()]);
         endingSoon.value = endData;
         suggestedMatches.value = matchData;
         jobs.value = jobsData;
@@ -217,25 +203,7 @@ onMounted(load);
 </script>
 
 <style scoped>
-.sched-view { max-width: 1100px; margin: 0 auto; padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
-.sched-view-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.sched-view-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; color: var(--text-color); }
-.sched-view-header p { margin: 0; color: var(--text-color-secondary); font-size: 0.88rem; }
-.sched-header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.sched-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
-.sched-empty-state {
-    background: var(--surface-card);
-    border: 1px solid var(--surface-border);
-    border-radius: 10px;
-    padding: 3rem 2rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-}
-.sched-empty-state i { font-size: 2rem; color: var(--green-500, #22c55e); }
-.sched-empty-state p { margin: 0; color: var(--text-color-secondary); }
+.ent-empty { font-size: 0.85rem; color: var(--text-color-secondary); }
 .days-urgent { color: var(--red-500, #ef4444); font-weight: 700; }
 .days-soon { color: var(--orange-500, #f97316); font-weight: 600; }
 .days-ok { color: var(--text-color-secondary); }

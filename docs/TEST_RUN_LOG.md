@@ -1,4 +1,4 @@
-# Test Run Log
+﻿# Test Run Log
 
 Format: Date | Phase | Command | Purpose | Result | Notes
 
@@ -19,6 +19,11 @@ Format: Date | Phase | Command | Purpose | Result | Notes
 | 2026-04-28 | Handoff doc cleanup | `rg -n "ProjectPlan|TaskActual|dhtmlx-gantt|/api/v1/project-plans|ProjectPlanView|ProjectPlans|DbSet<ProjectPlan>|DbSet<TaskActual>" ...` | Verify stale terms were removed from active canonical docs | PASS | Remaining matches are only archived/superseded/conflict context in tombstones, handoff index, QA notes, or worklog. |
 | 2026-04-28 | Handoff doc cleanup | `Test-Path` checks for all handoff-index docs | Verify every doc named in `PROJECT_HANDOFF_INDEX.md` exists | PASS | All eight canonical docs plus the handoff index exist. |
 
+| 2026-04-29 | Project-app runtime audit | `dotnet build --no-restore --configuration Release` | Verify backend/API/Data/Shared compile and NSwag generation | PASS | Build succeeded. NSwag ran successfully. Warnings: AutoMapper NU1903 advisory and nullable warning in `Api/Program.cs(126,55)`. |
+| 2026-04-29 | Project-app runtime audit | `npm.cmd --prefix webapp install` | Restore missing frontend dependencies needed for build/test | PASS | Dependencies installed; 0 npm vulnerabilities reported. |
+| 2026-04-29 | Project-app runtime audit | `npm.cmd --prefix webapp run build:dev` | Verify frontend compile after Claude platform changes | PASS | Vite build succeeded with portal/planning/scheduling chunks emitted. |
+| 2026-04-29 | Project-app runtime audit | `dotnet test --no-restore --configuration Release` | Check for backend tests | PASS / NO TEST OUTPUT | Repo has no backend test project; command exited 0 without test output. |
+| 2026-04-29 | Project-app runtime audit | `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` | Safe read-only planning/scheduling smoke | PASS BUT WEAK | Global setup skipped and tests passed, but screenshots were blank dark pages. Existing smoke spec is inadequate because it does not assert visible content. Evidence: `docs/QA_EVIDENCE_20260429_PROJECT_APP_RUNTIME.md`. |
 ---
 
 ## Known Commands
@@ -47,3 +52,4 @@ cd Api && nswag run nswag.json
 - Playwright e2e tests exist in `webapp/tests/e2e/`; use `SKIP_GLOBAL_SETUP=true` to avoid mutating demo data.
 - Build checks (`dotnet build` and `npm run build`) are the primary automated gate.
 - Manual browser verification is required for UI changes.
+

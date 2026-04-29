@@ -403,7 +403,7 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 - **Likely files:** `SCHEDULING_STEP_OUT_PLAN.md`, `SCHEDULING_TODO.md`, scheduling/planning services/controllers/views, `Api/Program.cs`, `Data/**`, `Api/Controllers/DevController.cs`, dashboard views/services.
 - **Verification required:** Codex creates an evidence packet after Claude's chunk showing which checklist items exist, which compile, which are functional, and which violate architecture boundaries.
 - **Regression checklist:** `QA-PLAT-007`, `QA-PLAT-009`, `QA-PLAN-005`, `QA-SCHED-004`, `QA-SCHED-007`, `QA-SCHED-008`.
-- **Latest Codex check:** 2026-04-28. File presence is now broad: scheduling docs, `AssignmentConflictService.cs`, `CoverageCalculationService.cs`, `SuggestedMatchService.cs`, `SchedulingController.cs`, `PortalController.cs`, planning/scheduling Vue views, planning/scheduling models, and migrations exist. Backend build passed; frontend build passed. Still open because functional verification, screenshots, route smoke, API output, seed/dedupe proof, and final regression checklist have not been completed. `docs/LIVE_TODO.md` is stale and still says Phase 1 is in progress even though later files exist.
+- **Latest Codex check:** 2026-04-29 Project-app audit. Backend Release build passed and NSwag ran successfully; frontend `build:dev` passed after dependencies were installed. `verify-scheduling-planning.spec.ts` passed with `SKIP_GLOBAL_SETUP=true`, but both screenshots are blank dark pages, so the spec is too weak and does not prove visible runtime health. Still open for item-by-item functional proof, API output/dedupe evidence, visible-content screenshots, and final regression checklist.
 - **Reopened reason:** N/A.
 
 ### PLATFORM-020: Platform Demo Seed Must Not Be Controller-Only Lifecycle Seed
@@ -608,6 +608,27 @@ These items govern the Portal / Planning / Scheduling expansion. They are not pe
 
 ## Verification Sweeps
 
+### 2026-04-29 Codex Sweep: Project-app Runtime Audit
+
+Evidence handoff: `docs/QA_EVIDENCE_20260429_PROJECT_APP_RUNTIME.md`
+
+Screenshot packet: `docs/qa-evidence/QA_AUDIT_20260429_PROJECT_APP_RUNTIME/`
+
+Build/test verification:
+
+- `dotnet build --no-restore --configuration Release` passed. NSwag ran successfully. Warnings: AutoMapper NU1903 advisory and nullable warning in `Api/Program.cs(126,55)`.
+- `npm.cmd --prefix webapp install` passed because frontend dependencies were missing in this checkout.
+- `npm.cmd --prefix webapp run build:dev` passed.
+- `dotnet test --no-restore --configuration Release` exited 0, but there are no backend test projects in this repo.
+- `SKIP_GLOBAL_SETUP=true npx.cmd playwright test tests/e2e/verify-scheduling-planning.spec.ts --project=chromium-mocked --workers=1` passed, but the captured screenshots are blank dark pages. Treat this as an inadequate smoke test, not proof the UI is visibly correct.
+
+| ID | Verdict | Evidence |
+|----|---------|----------|
+| PLATFORM-019 | OPEN / PARTIAL | Build and basic smoke ran, but screenshots are blank and queue items still need item-by-item functional proof. |
+| PLATFORM-004 | OPEN / PARTIAL | Frontend builds and planning/scheduling routes exist, but visible UI proof failed because screenshots show blank dark pages. |
+| PLATFORM-005 | OPEN / PARTIAL | Portal endpoint exists, but portal still uses old signals such as pending FCO/recent estimates instead of the locked project-health shell language. |
+| PLATFORM-016 | OPEN / PARTIAL | Test trail exists, but no backend test project exists and the planning/scheduling smoke test needs stronger visible-content assertions. |
+| PLATFORM-017 | OPEN / PARTIAL | Release build now runs NSwag successfully; keep tracking because earlier Project-app build attempt showed NSwag fragility before rerun. |
 ### 2026-04-26 Codex Sweep: TODO Resweep
 
 Evidence handoff: `docs/QA_EVIDENCE_20260426_TODO_RESWEEP.md`
@@ -793,3 +814,5 @@ These completed demo gates were manually verified by Joseph and must not be re-a
 - P0-019: Exact boss demo AI prompt pack passes.
 
 Only reopen these if Joseph explicitly asks, the AI/provider/tool code changes, or a fresh demo prompt fails.
+
+

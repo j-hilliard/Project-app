@@ -20,7 +20,7 @@ function Get-StrongholdPortOwner {
 
 Clear-Host
 Write-Host ""
-Write-Host "  STRONGHOLD ENTERPRISE ESTIMATING  -- Starting Up" -ForegroundColor Cyan
+Write-Host "  STRONGHOLD PROJECT APP  -- Starting Up" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "  Checking SQL Server Express..." -ForegroundColor Yellow
@@ -38,18 +38,18 @@ if ($svc.Status -ne 'Running') {
 Write-Host "  SQL Server Express: OK" -ForegroundColor Green
 
 $apiAlreadyRunning = $false
-$apiOwner = Get-StrongholdPortOwner -Port 7211
+$apiOwner = Get-StrongholdPortOwner -Port 7311
 if ($apiOwner) {
     if ($apiOwner.ProcessName -eq "node") {
-        Write-Host "  WARNING: Node/Vite is occupying API port 7211. Stopping PID $($apiOwner.ProcessId) so the API can bind correctly." -ForegroundColor Yellow
+        Write-Host "  WARNING: Node/Vite is occupying API port 7311. Stopping PID $($apiOwner.ProcessId) so the API can bind correctly." -ForegroundColor Yellow
         Stop-Process -Id $apiOwner.ProcessId -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
     } elseif ($apiOwner.ProcessName -in @("dotnet", "Api")) {
-        Write-Host "  API port 7211 is already owned by $($apiOwner.ProcessName). Reusing existing API process PID $($apiOwner.ProcessId)." -ForegroundColor Green
+        Write-Host "  API port 7311 is already owned by $($apiOwner.ProcessName). Reusing existing API process PID $($apiOwner.ProcessId)." -ForegroundColor Green
         $apiAlreadyRunning = $true
     } else {
-        Write-Host "  ERROR: Port 7211 is occupied by $($apiOwner.ProcessName) PID $($apiOwner.ProcessId)." -ForegroundColor Red
-        Write-Host "  7211 is reserved for the .NET API. Stop that process before starting Stronghold." -ForegroundColor Red
+        Write-Host "  ERROR: Port 7311 is occupied by $($apiOwner.ProcessName) PID $($apiOwner.ProcessId)." -ForegroundColor Red
+        Write-Host "  7311 is reserved for the .NET API. Stop that process before starting Stronghold." -ForegroundColor Red
         Read-Host "Press Enter to exit"
         exit 1
     }
@@ -64,19 +64,19 @@ Write-Host "  Starting Cloudflare tunnel..." -ForegroundColor Yellow
 Stop-Process -Name "cloudflared" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 $cfLog = "$env:TEMP\cf-tunnel-$((Get-Date).Ticks).log"
-Start-Process powershell -WindowStyle Minimized -ArgumentList "-NoExit", "-Command", "& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --url https://localhost:7211 2>&1 | Tee-Object -FilePath '$cfLog'"
+Start-Process powershell -WindowStyle Minimized -ArgumentList "-NoExit", "-Command", "& 'C:\Program Files (x86)\cloudflared\cloudflared.exe' tunnel --url https://localhost:7311 2>&1 | Tee-Object -FilePath '$cfLog'"
 
-$vueOwner = Get-StrongholdPortOwner -Port 7210
+$vueOwner = Get-StrongholdPortOwner -Port 7310
 if ($vueOwner -and $vueOwner.ProcessName -ne "node") {
-    Write-Host "  ERROR: Port 7210 is occupied by $($vueOwner.ProcessName) PID $($vueOwner.ProcessId)." -ForegroundColor Red
-    Write-Host "  7210 is reserved for the Vue dev server. Stop that process before starting Stronghold." -ForegroundColor Red
+    Write-Host "  ERROR: Port 7310 is occupied by $($vueOwner.ProcessName) PID $($vueOwner.ProcessId)." -ForegroundColor Red
+    Write-Host "  7310 is reserved for the Vue dev server. Stop that process before starting Stronghold." -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
 Write-Host "  Starting Vue dev server..." -ForegroundColor Yellow
 if ($vueOwner -and $vueOwner.ProcessName -eq "node") {
-    Write-Host "  Vue port 7210 is already owned by node. Reusing existing Vue process PID $($vueOwner.ProcessId)." -ForegroundColor Green
+    Write-Host "  Vue port 7310 is already owned by node. Reusing existing Vue process PID $($vueOwner.ProcessId)." -ForegroundColor Green
 } else {
     Start-Process powershell -WorkingDirectory "$AppRoot\webapp" -ArgumentList "-NoExit", "-Command", "npm run dev"
 }
@@ -92,14 +92,14 @@ for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Seconds 2
     try {
         $lb = [System.Net.Http.StringContent]::new('{"username":"x","password":"x"}', [System.Text.Encoding]::UTF8, 'application/json')
-        $lr = $http.PostAsync('https://localhost:7211/api/auth/login', $lb).GetAwaiter().GetResult()
+        $lr = $http.PostAsync('https://localhost:7311/api/auth/login', $lb).GetAwaiter().GetResult()
         if ([int]$lr.StatusCode -ge 200) { $apiReady = $true; break }
     } catch { }
 }
 $http.Dispose()
-$apiOwner = Get-StrongholdPortOwner -Port 7211
+$apiOwner = Get-StrongholdPortOwner -Port 7311
 if ($apiOwner -and $apiOwner.ProcessName -notin @("dotnet", "Api")) {
-    Write-Host "  ERROR: API port 7211 is owned by $($apiOwner.ProcessName), not the Stronghold API. Data calls will fail." -ForegroundColor Red
+    Write-Host "  ERROR: API port 7311 is owned by $($apiOwner.ProcessName), not the Stronghold API. Data calls will fail." -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
@@ -112,7 +112,7 @@ $http2 = [System.Net.Http.HttpClient]::new($h2)
 $http2.Timeout = [TimeSpan]::FromSeconds(3)
 for ($i = 0; $i -lt 20; $i++) {
     Start-Sleep -Seconds 2
-    try { $null = $http2.GetAsync('https://localhost:7210').GetAwaiter().GetResult(); Write-Host "  Vue: Ready" -ForegroundColor Green; break } catch { }
+    try { $null = $http2.GetAsync('https://localhost:7310').GetAwaiter().GetResult(); Write-Host "  Vue: Ready" -ForegroundColor Green; break } catch { }
 }
 $http2.Dispose()
 
@@ -135,15 +135,15 @@ if ($tunnelUrl -and $cfToken) {
     } catch { Write-Host "  Worker update failed: $_" -ForegroundColor Yellow }
 }
 
-# Open API swagger first so browser accepts the dev cert for port 7211
+# Open API swagger first so browser accepts the dev cert for port 7311
 # before the app makes cross-origin fetch requests to it.
-Start-Process "https://localhost:7211/swagger"
+Start-Process "https://localhost:7311/swagger"
 Start-Sleep -Seconds 2
-Start-Process "https://localhost:7210"
+Start-Process "https://localhost:7310"
 
 Write-Host ""
-Write-Host "  App:  https://localhost:7210" -ForegroundColor Green
-Write-Host "  API:  https://localhost:7211" -ForegroundColor Green
+Write-Host "  App:  https://localhost:7310" -ForegroundColor Green
+Write-Host "  API:  https://localhost:7311" -ForegroundColor Green
 Write-Host "  Foundry: https://stronghold-agent.j-travishilliard.workers.dev" -ForegroundColor Cyan
 Write-Host ""
 Read-Host "Press Enter to close"
